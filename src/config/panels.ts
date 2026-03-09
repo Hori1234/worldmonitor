@@ -202,6 +202,8 @@ const TECH_PANELS: Record<string, PanelConfig> = {
   stablecoins: { name: 'Stablecoins', enabled: true, priority: 2 },
   'world-clock': { name: 'World Clock', enabled: true, priority: 2 },
   monitors: { name: 'My Monitors', enabled: true, priority: 2 },
+  'test-panel': { name: 'Test Panel', enabled: true, priority: 2 }
+  
 };
 
 const TECH_MAP_LAYERS: MapLayers = {

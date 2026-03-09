@@ -208,6 +208,7 @@ export const DEFAULT_PANELS: Record<string, PanelConfig> = {
   'etf-flows': { name: 'BTC ETF Tracker', enabled: true, priority: 2 },
   stablecoins: { name: 'Stablecoins', enabled: true, priority: 2 },
   monitors: { name: 'My Monitors', enabled: true, priority: 2 },
+  'test-panel': { name: 'Test Panel', enabled: true, priority: 1 }, 
 };
 
 // Tech-focused map layers (subset)

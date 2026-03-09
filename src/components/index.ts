@@ -47,3 +47,7 @@ export * from './TelegramIntelPanel';
 export * from './BreakingNewsBanner';
 export * from './GulfEconomiesPanel';
 export * from './WorldClockPanel';
+
+
+// For testing and prototyping new panels, create a new file here and export it. It will automatically be included in the build and show up in the "Add Panel" menu in the app.
+export * from './TestPanel';    
