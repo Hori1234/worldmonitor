@@ -38,7 +38,7 @@ import {
   TelegramIntelPanel,
   GulfEconomiesPanel,
   WorldClockPanel,
-  TestPanel
+  PopUpPanel
 } from '@/components';
 import { SatelliteFiresPanel } from '@/components/SatelliteFiresPanel';
 import { PositiveNewsFeedPanel } from '@/components/PositiveNewsFeedPanel';
@@ -608,8 +608,8 @@ export class PanelLayoutManager implements AppModule {
     this.ctx.panels['energy'] = energyPanel;
 
     // Test panel for development - not added to feed list or default panels since it's not meant to be permanent
-    const testPanel = new TestPanel();
-    this.ctx.panels['test-panel'] = testPanel ;
+    const pu_panel = new PopUpPanel();
+    this.ctx.panels['popup-panel'] = pu_panel ;
 
     for (const key of Object.keys(FEEDS)) {
       if (this.ctx.newsPanels[key]) continue;

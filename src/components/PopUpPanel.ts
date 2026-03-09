@@ -1,6 +1,6 @@
 import { Panel } from './Panel';
 
-export class TestPanel extends Panel {
+export class PopUpPanel extends Panel {
   private counter: number = 0;
   
   private originalParent: HTMLElement | null = null;
@@ -9,7 +9,7 @@ export class TestPanel extends Panel {
   private isMaximized = false;
 
   constructor() {
-    super({ id: 'test-panel', title: 'Test Panel' });
+    super({ id: 'popup-panel', title: 'Pop-Up Panel' });
 
     const controls = document.createElement('div');
     controls.style.display = 'flex';
