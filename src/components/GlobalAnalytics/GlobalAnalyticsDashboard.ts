@@ -8,6 +8,8 @@ export class GlobalAnalyticsDashboard extends PopUpPanel {
       id: 'global-analytics-dashboard', 
       title: 'Global Analytics Dashboard' 
     });
+      
+      this.render(); // Initial render to set up the content
   }
 
   // Override the render method to show different content

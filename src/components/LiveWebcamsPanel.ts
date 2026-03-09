@@ -1,4 +1,5 @@
 import { Panel } from './Panel';
+import { PopUpPanel } from './PopUpPanel';
 import { IDLE_PAUSE_MS } from '@/config';
 import { isDesktopRuntime, getLocalApiPort } from '@/services/runtime';
 import { escapeHtml } from '@/utils/sanitize';
@@ -60,7 +61,7 @@ const IDLE_ACTIVITY_EVENTS = ['mousedown', 'keydown', 'scroll', 'touchstart', 'm
 type ViewMode = 'grid' | 'single';
 type RegionFilter = 'all' | WebcamRegion;
 
-export class LiveWebcamsPanel extends Panel {
+export class LiveWebcamsPanel extends PopUpPanel {
   private viewMode: ViewMode = 'grid';
   private regionFilter: RegionFilter = 'iran';
   private activeFeed: WebcamFeed = WEBCAM_FEEDS[0]!;
@@ -74,7 +75,7 @@ export class LiveWebcamsPanel extends Panel {
   private boundVisibilityHandler!: () => void;
   private idleDetectionEnabled = false;
   private isIdle = false;
-  private alwaysOn = getLiveStreamsAlwaysOn();
+  private alwaysOn = getLiveStreamsAlwaysOn(); 
   private unsubscribeStreamSettings: (() => void) | null = null;
 
   // UI
@@ -89,7 +90,7 @@ export class LiveWebcamsPanel extends Panel {
     if (this.forceSingleView) {
       this.viewMode = 'single';
     }
-    this.createFullscreenButton();
+    // this.createFullscreenButton();
     this.createToolbar();
     this.setupIntersectionObserver();
     this.setupIdleDetection();
@@ -102,7 +103,7 @@ export class LiveWebcamsPanel extends Panel {
     document.addEventListener('keydown', this.boundFullscreenEscHandler);
   }
 
-  private createFullscreenButton(): void {
+  private createFullscreenButton(): void { 
     this.fullscreenBtn = document.createElement('button');
     this.fullscreenBtn.className = 'live-mute-btn';
     this.fullscreenBtn.title = 'Fullscreen';
@@ -237,7 +238,12 @@ export class LiveWebcamsPanel extends Panel {
       return `http://localhost:${getLocalApiPort()}/api/youtube-embed?${params.toString()}`;
     }
     const vq = quality !== 'auto' ? `&vq=${quality}` : '';
-    return `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&controls=0&modestbranding=1&playsinline=1&rel=0${vq}`;
+    
+    // Required for production Tauri desktop due to YouTube's embed restrictions. The "nocookie" domain is designed for enhanced privacy and has laxer restrictions, allowing it to work within the Tauri app's security model. For web, we can use the regular embed URL.
+    // return `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&controls=0&modestbranding=1&playsinline=1&rel=0${vq}`;
+    
+    //Regular embed for /dev 
+    return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&modestbranding=1&playsinline=1&rel=0${vq}`;
   }
 
   private createIframe(feed: WebcamFeed): HTMLIFrameElement {
@@ -255,7 +261,7 @@ export class LiveWebcamsPanel extends Panel {
     return iframe;
   }
 
-  private render(): void {
+  protected render(): void {
     this.destroyIframes();
 
     if (!this.isVisible || this.isIdle) {

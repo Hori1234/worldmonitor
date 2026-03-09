@@ -1,4 +1,5 @@
 import { Panel, type PanelOptions } from './Panel';
+import { SVG_ICONS } from '../styles/Icons/navigationIcons';
 
 export class PopUpPanel extends Panel {
   protected counter: number = 0;
@@ -7,6 +8,7 @@ export class PopUpPanel extends Panel {
   private placeholderNode: HTMLElement | null = null;
   private externalWindow: Window | null = null;
   private isMaximized = false;
+  private id: string;
 
   constructor(options?: Partial<PanelOptions>) {
     super({ 
@@ -15,6 +17,7 @@ export class PopUpPanel extends Panel {
       ...options 
     });
 
+    this.id = options?.id || 'popup-panel';
     const controls = document.createElement('div');
     controls.style.display = 'flex';
     controls.style.gap = '8px';
@@ -22,7 +25,8 @@ export class PopUpPanel extends Panel {
 
     // Create Pop-out Button
     const popBtn = document.createElement('button');
-    popBtn.textContent = '⧉'; // Pop-out symbol
+    popBtn.innerHTML = SVG_ICONS.popOut; // Pop-out symbol
+    popBtn.className='live-mute-btn'; // Reuse existing styles for consistency
     popBtn.style.cursor = 'pointer';
     popBtn.style.fontSize = '14px';   
     popBtn.style.marginRight = '10px'; 
@@ -39,13 +43,33 @@ export class PopUpPanel extends Panel {
       }
       
       // 1. Open a new external window
-      this.externalWindow = window.open('', 'TestPanelWindow', 'width=450,height=400,left=200,top=200');
+      // this.externalWindow = window.open('', 'TestPanelWindow', 'width=450,height=400,left=200,top=200');
       
+      // Calculate dimensions as percentages of the user's monitor screen
+      const screenW = window.screen.width;
+      const screenH = window.screen.height;
+      
+      const popupW = Math.round(screenW * 0.50); // 50% width
+      const popupH = Math.round(screenH * 0.60); // 60% height
+      
+      // Calculate left and top to center the window
+      const left = Math.round((screenW - popupW) / 2);
+      const top = Math.round((screenH - popupH) / 2);
+
+      const windowName = `PopOutWindow_${this.id.replace(/[^a-zA-Z0-9]/g, '')}`; 
+      // 1. Open a new external window dynamically
+      this.externalWindow = window.open(
+        '', 
+        windowName, 
+        `width=${popupW},height=${popupH},left=${left},top=${top}`
+      );
+
+
       if (!this.externalWindow) {
         alert('Popup blocked! Please allow popups for this site.');
         return;
       }
-
+ 
       // 2. Copy the main app's stylesheets over to the new window so it looks right
       const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
         .map(s => s.outerHTML)
@@ -115,7 +139,8 @@ export class PopUpPanel extends Panel {
 
     // 2. Create Maximize Button
     const maxBtn = document.createElement('button');
-    maxBtn.textContent = '□'; // square for maximize
+    maxBtn.innerHTML = SVG_ICONS.maximize; // square for maximize
+    maxBtn.className='live-mute-btn'; // Reuse existing styles for consistency  
     maxBtn.style.cursor = 'pointer';
     maxBtn.style.fontSize = '12px';   
     maxBtn.style.width = '25px';
@@ -177,7 +202,6 @@ export class PopUpPanel extends Panel {
     controls.appendChild(popBtn);
     this.header.appendChild(controls);
 
-    this.render();
   }
 
   protected render(): void {
