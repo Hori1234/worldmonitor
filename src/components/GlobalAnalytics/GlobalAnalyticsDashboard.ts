@@ -1,5 +1,5 @@
 import { PopUpPanel } from '../PopUpPanel';
-
+import overview from './fragments/overview.html?raw';
 export class GlobalAnalyticsDashboard extends PopUpPanel {
   
   constructor() {
@@ -20,35 +20,32 @@ export class GlobalAnalyticsDashboard extends PopUpPanel {
     this.content.style.background = 'var(--panel-bg)';
 
     // 2. Inject completely different HTML content
-    this.content.innerHTML = `
-      <div style="color: var(--text); font-size: 1.1em; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
-        Global Analytics Dashboard
-      </div>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-        <div style="background: var(--bg); padding: 12px; border-radius: 6px;">
-          <div style="font-size: 12px; color: var(--text-muted);">Metric A</div>
-          <div style="font-size: 24px; color: var(--accent);">34,291</div>
-        </div>
-        <div style="background: var(--bg); padding: 12px; border-radius: 6px;">
-          <div style="font-size: 12px; color: var(--text-muted);">Status</div>
-          <div style="font-size: 24px; color: #44ff88;">OK</div>
-        </div>
-      </div>
-      <button id="refresh-data-btn" style="margin-top: auto; padding: 8px; cursor: pointer; background: var(--accent); color: white; border: none; border-radius: 4px;">
-        Refresh Analytics
-      </button>
-    `;
+    this.content.innerHTML = overview;
+
 
     // 3. Attach custom event listeners for THIS specific panel
-    const refreshBtn = this.content.querySelector('#refresh-data-btn');
-    refreshBtn?.addEventListener('click', () => {
-      console.log('Refreshing custom analytics data...');
-      refreshBtn.textContent = 'Loading...';
+    const refreshBtn = this.content.querySelector('#refresh-data-btn') as HTMLElement | null;
+    
+    // Check if the button exists before modifying it
+    if (refreshBtn) {
+        refreshBtn.style.padding = '8px 16px';
+        refreshBtn.style.backgroundColor = 'var(--accent-color)';
+        refreshBtn.style.color = '#fff';
+        refreshBtn.style.border = 'var(--accent-color)  1px solid ';
+        refreshBtn.style.borderRadius = '4px';
+        refreshBtn.style.cursor = 'pointer';    
       
-      // Simulate an API call
-      setTimeout(() => {
-        refreshBtn.textContent = 'Refresh Analytics';
-      }, 1000);
-    });
+      refreshBtn.addEventListener('click', () => {
+        console.log('Refreshing custom analytics data...');
+        refreshBtn.textContent = 'Loading...';
+        
+        // Simulate an API call
+        setTimeout(() => {
+          refreshBtn.textContent = 'Refresh Analytics';
+        }, 1000);
+      });
+    } else {
+      console.warn("Could not find '#refresh-data-btn' in overview.html");
+    }
   }
 }

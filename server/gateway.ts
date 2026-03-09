@@ -11,7 +11,6 @@
 
 import { createRouter, type RouteDescriptor } from './router';
 import { getCorsHeaders, isDisallowedOrigin } from './cors';
-// @ts-expect-error — JS module, no declaration file
 import { validateApiKey } from '../api/_api-key.js';
 import { mapErrorToResponse } from './error-mapper';
 import { checkRateLimit } from './_shared/rate-limit';
