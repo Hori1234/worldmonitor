@@ -208,7 +208,7 @@ export class DataLoaderManager implements AppModule {
     const now = Date.now();
 
     if (this.digestBreaker.state === 'open') {
-      if (now < this.digestBreaker.cooldownUntil) {
+      if (now < this.digestBreaker.cooldownUntil) { 
         return this.lastGoodDigest ?? await this.loadPersistedDigest();
       }
       this.digestBreaker.state = 'half-open';
