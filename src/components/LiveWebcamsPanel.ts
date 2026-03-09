@@ -253,7 +253,7 @@ export class LiveWebcamsPanel extends PopUpPanel {
     iframe.title = `${feed.city} live webcam`;
     iframe.allow = 'autoplay; encrypted-media; picture-in-picture';
     iframe.referrerPolicy = 'strict-origin-when-cross-origin';
-    if (!isDesktopRuntime()) {
+    if (!isDesktopRuntime()) { 
       iframe.allowFullscreen = true;
       iframe.setAttribute('loading', 'lazy');
       iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-presentation');
