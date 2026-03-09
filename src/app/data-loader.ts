@@ -206,8 +206,8 @@ export class DataLoaderManager implements AppModule {
 
   private async tryFetchDigest(): Promise<ListFeedDigestResponse | null> {
     const now = Date.now();
-
-    if (this.digestBreaker.state === 'open') {
+ 
+    if (this.digestBreaker.state === 'open') { 
       if (now < this.digestBreaker.cooldownUntil) { 
         return this.lastGoodDigest ?? await this.loadPersistedDigest();
       }
