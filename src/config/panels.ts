@@ -204,6 +204,7 @@ const TECH_PANELS: Record<string, PanelConfig> = {
   'world-clock': { name: 'World Clock', enabled: true, priority: 2 },
   monitors: { name: 'My Monitors', enabled: true, priority: 2 },
   'popup-panel': { name: 'Pop-Up Panel', enabled: true, priority: 2 },
+  'global-analytics-dashboard': { name: 'Global Analytics Dashboard', enabled: true, priority: 2 },
   
 };
 

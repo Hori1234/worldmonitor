@@ -1,15 +1,19 @@
-import { Panel } from './Panel';
+import { Panel, type PanelOptions } from './Panel';
 
 export class PopUpPanel extends Panel {
-  private counter: number = 0;
+  protected counter: number = 0;
   
   private originalParent: HTMLElement | null = null;
   private placeholderNode: HTMLElement | null = null;
   private externalWindow: Window | null = null;
   private isMaximized = false;
 
-  constructor() {
-    super({ id: 'popup-panel', title: 'Pop-Up Panel' });
+  constructor(options?: Partial<PanelOptions>) {
+    super({ 
+      id: options?.id || 'popup-panel', 
+      title: options?.title || 'Pop-Up Panel',
+      ...options 
+    });
 
     const controls = document.createElement('div');
     controls.style.display = 'flex';
@@ -176,7 +180,7 @@ export class PopUpPanel extends Panel {
     this.render();
   }
 
-  private render(): void {
+  protected render(): void {
     this.content.style.padding = '12px';
     this.content.style.display = 'flex';
     this.content.style.flexDirection = 'column';
