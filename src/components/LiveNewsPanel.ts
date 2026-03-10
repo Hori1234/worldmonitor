@@ -1,4 +1,5 @@
 import { Panel } from './Panel';
+import { PopUpPanel } from './PopUpPanel';
 import { fetchLiveVideoInfo } from '@/services/live-news';
 import { isDesktopRuntime, getRemoteApiBaseUrl, getApiBaseUrl, getLocalApiPort } from '@/services/runtime';
 import { t } from '../services/i18n';
@@ -306,7 +307,7 @@ export function saveChannelsToStorage(channels: LiveChannel[]): void {
   saveToStorage(STORAGE_KEYS.liveChannels, { order, custom, displayNameOverrides });
 }
 
-export class LiveNewsPanel extends Panel {
+export class LiveNewsPanel extends PopUpPanel {
   private static apiPromise: Promise<void> | null = null;
   private channels: LiveChannel[] = [];
   private activeChannel!: LiveChannel;
@@ -697,7 +698,7 @@ export class LiveNewsPanel extends Panel {
     const header = this.element.querySelector('.panel-header');
     header?.appendChild(this.muteBtn);
 
-    this.createFullscreenButton();
+    // this.createFullscreenButton();
   }
 
   private createFullscreenButton(): void {

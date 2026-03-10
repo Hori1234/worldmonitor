@@ -55,6 +55,7 @@ const FULL_PANELS: Record<string, PanelConfig> = {
   'oref-sirens': { name: 'Israel Sirens', enabled: true, priority: 2 },
   'telegram-intel': { name: 'Telegram Intel', enabled: true, priority: 2 },
   'world-clock': { name: 'World Clock', enabled: true, priority: 2 },
+  'popup-panel': { name: 'Pop-Up Panel', enabled: true, priority: 2 },
 };
 
 const FULL_MAP_LAYERS: MapLayers = {
@@ -202,6 +203,9 @@ const TECH_PANELS: Record<string, PanelConfig> = {
   stablecoins: { name: 'Stablecoins', enabled: true, priority: 2 },
   'world-clock': { name: 'World Clock', enabled: true, priority: 2 },
   monitors: { name: 'My Monitors', enabled: true, priority: 2 },
+  'popup-panel': { name: 'Pop-Up Panel', enabled: true, priority: 2 },
+  'global-analytics-dashboard': { name: 'Global Analytics Dashboard', enabled: true, priority: 2 },
+  
 };
 
 const TECH_MAP_LAYERS: MapLayers = {
@@ -609,7 +613,7 @@ export const PANEL_CATEGORY_MAP: Record<string, { labelKey: string; panelKeys: s
   // All variants — essential panels
   core: {
     labelKey: 'header.panelCatCore',
-    panelKeys: ['map', 'live-news', 'live-webcams', 'insights', 'strategic-posture'],
+    panelKeys: ['map', 'live-news', 'live-webcams', 'insights', 'strategic-posture','popup-panel '],
   },
 
   // Full (geopolitical) variant
