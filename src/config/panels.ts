@@ -205,7 +205,7 @@ const TECH_PANELS: Record<string, PanelConfig> = {
   monitors: { name: 'My Monitors', enabled: true, priority: 2 },
   'popup-panel': { name: 'Pop-Up Panel', enabled: true, priority: 2 },
   'global-analytics-dashboard': { name: 'Global Analytics Dashboard', enabled: true, priority: 2 },
-  
+  'global-analytics-nested-dashboard': { name: 'Global Analytics Dashboard', enabled: true, priority: 2 },
 };
 
 const TECH_MAP_LAYERS: MapLayers = {

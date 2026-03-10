@@ -210,6 +210,7 @@ export const DEFAULT_PANELS: Record<string, PanelConfig> = {
   monitors: { name: 'My Monitors', enabled: true, priority: 2 },
   'popup-panel': { name: 'Pop-Up Panel', enabled: true, priority: 2 }, 
   'global-analytics-dashboard': { name: 'Global Analytics Dashboard', enabled: true, priority: 2 },
+  'global-analytics-nested-dashboard': { name: 'Global Analytics Dashboard', enabled: true, priority: 2 },
 };
 
 // Tech-focused map layers (subset)

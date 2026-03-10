@@ -40,6 +40,7 @@ import {
   WorldClockPanel,
   PopUpPanel,
   GlobalAnalyticsDashboard,
+  GlobalAnalyticsNestedDashboard,
 } from '@/components';
 import { SatelliteFiresPanel } from '@/components/SatelliteFiresPanel';
 import { PositiveNewsFeedPanel } from '@/components/PositiveNewsFeedPanel';
@@ -614,6 +615,9 @@ export class PanelLayoutManager implements AppModule {
     
     const globalAnalyticsPanel = new GlobalAnalyticsDashboard();
     this.ctx.panels['global-analytics-dashboard'] = globalAnalyticsPanel;
+
+    const globalAnalyticsNestedPanel = new GlobalAnalyticsNestedDashboard();
+    this.ctx.panels['global-analytics-nested-dashboard'] = globalAnalyticsNestedPanel;
 
     for (const key of Object.keys(FEEDS)) {
       if (this.ctx.newsPanels[key]) continue;
