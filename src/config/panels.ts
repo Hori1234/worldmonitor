@@ -232,7 +232,7 @@ const TECH_MAP_LAYERS: MapLayers = {
   cyberThreats: false,
   datacenters: true,
   protests: false,
-  flights: false,
+  flights: false, 
   military: false,
   natural: true,
   spaceports: false,
