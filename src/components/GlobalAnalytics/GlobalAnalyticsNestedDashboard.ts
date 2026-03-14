@@ -17,7 +17,7 @@ export class GlobalAnalyticsNestedDashboard extends NestedPanelLayout {
   }
 
   private initializePanels(): void {
-    // 2. Instantiate the Global Analytics panel
+    // 2. Instantiate the Global Analytics panel                                                                                            
     const analyticsPanel = new GlobalAnalyticsDashboard();
 
     // 3. Instantiate a dummy panel
@@ -26,9 +26,9 @@ export class GlobalAnalyticsNestedDashboard extends NestedPanelLayout {
       title: 'Dummy Status Panel' 
     });
 
-    const etfFlowsPanel = new ETFFlowsPanel();
+    const etfFlowsPanel = new ETFFlowsPanel();                    
     const investmentsPanel = new InvestmentsPanel();
-    // // 4. Instantiate the News panel
+    // // 4. Instantiate the News panel                     
     // const newsPanel = new NewsPanel( );
 
     // Add some simple inline styling or content to the dummy panel
@@ -45,6 +45,6 @@ export class GlobalAnalyticsNestedDashboard extends NestedPanelLayout {
     this.addSubPanel(analyticsPanel);
     this.addSubPanel(dummyPanel);
       this.addSubPanel(etfFlowsPanel);
-        this.addSubPanel(investmentsPanel);
+        this.addSubPanel(investmentsPanel);                                           
   }
 }

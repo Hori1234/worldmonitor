@@ -1265,6 +1265,7 @@ fn main() {
     }
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_sql::Builder::default().build()) 
         .menu(build_app_menu)
         .on_menu_event(handle_menu_event)
         .manage(LocalApiState::default())
