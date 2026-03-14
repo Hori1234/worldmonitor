@@ -1,4 +1,3 @@
-import { Panel } from './Panel';
 import { PopUpPanel } from './PopUpPanel';
 import { IDLE_PAUSE_MS } from '@/config';
 import { isDesktopRuntime, getLocalApiPort } from '@/services/runtime';
@@ -103,18 +102,18 @@ export class LiveWebcamsPanel extends PopUpPanel {
     document.addEventListener('keydown', this.boundFullscreenEscHandler);
   }
 
-  private createFullscreenButton(): void { 
-    this.fullscreenBtn = document.createElement('button');
-    this.fullscreenBtn.className = 'live-mute-btn';
-    this.fullscreenBtn.title = 'Fullscreen';
-    this.fullscreenBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>';
-    this.fullscreenBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.toggleFullscreen();
-    });
-    const header = this.element.querySelector('.panel-header');
-    header?.appendChild(this.fullscreenBtn);
-  }
+  // private createFullscreenButton(): void { 
+  //   this.fullscreenBtn = document.createElement('button');
+  //   this.fullscreenBtn.className = 'live-mute-btn';
+  //   this.fullscreenBtn.title = 'Fullscreen';
+  //   this.fullscreenBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>';
+  //   this.fullscreenBtn.addEventListener('click', (e) => {
+  //     e.stopPropagation();
+  //     this.toggleFullscreen();
+  //   });
+  //   const header = this.element.querySelector('.panel-header');
+  //   header?.appendChild(this.fullscreenBtn);
+  // }
 
   private toggleFullscreen(): void {
     this.isFullscreen = !this.isFullscreen;

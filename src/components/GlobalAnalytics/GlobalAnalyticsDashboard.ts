@@ -1,5 +1,4 @@
 // src/components/GlobalAnalytics/GlobalAnalyticsDashboard.ts
-import { PopUpPanel } from '../PopUpPanel';
 import { Panel } from '../Panel';
 import overview from './fragments/overview.html?raw';
 import { html, render } from 'lit-html';

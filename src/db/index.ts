@@ -6,7 +6,7 @@ import * as schema from './schema';
 const isTauri = '__TAURI_INTERNALS__' in window || '__TAURI__' in window;
 
 let dbInstance: Database | null = null;
-const inMemoryMockDb = new Map(); // Simple mock for browser dev
+//const inMemoryMockDb = new Map(); // Simple mock for browser dev
 
 // Initialize the Tauri SQLite plugin connection
 export async function initDb() {
@@ -39,7 +39,7 @@ export const db = drizzle(
     
     try {
       if (method === 'run') {
-        const result = await database.execute(sql, params);
+        // const result = await database.execute(sql, params);
         return { rows: [] };
       } else if (method === 'all') {
         const rows = await database.select<Record<string, unknown>[]>(sql, params);

@@ -574,15 +574,22 @@ export class UnifiedSettings {
       }
     }
 
+    // if (this.panelFilter) {
+    //   const lower = this.panelFilter.toLowerCase();
+    //   entries = entries.filter(([key, panel]) =>
+    //     key.toLowerCase().includes(lower) ||
+    //     panel.name.toLowerCase().includes(lower) ||
+    //     this.config.getLocalizedPanelName(key, panel.name).toLowerCase().includes(lower)
+    //   );
+    // }
     if (this.panelFilter) {
-      const lower = this.panelFilter.toLowerCase();
-      entries = entries.filter(([key, panel]) =>
-        key.toLowerCase().includes(lower) ||
-        panel.name.toLowerCase().includes(lower) ||
-        this.config.getLocalizedPanelName(key, panel.name).toLowerCase().includes(lower)
-      );
-    }
-
+        const lower = this.panelFilter.toLowerCase();
+        entries = entries.filter(([key, panel]) =>
+          key.toLowerCase().includes(lower) ||
+          (panel?.name || key).toLowerCase().includes(lower) ||
+          this.config.getLocalizedPanelName(key, panel?.name || key).toLowerCase().includes(lower)
+        );
+      }
     return entries;
   }
 
@@ -602,12 +609,24 @@ export class UnifiedSettings {
 
     const entries = this.getVisiblePanelEntries();
     container.innerHTML = entries.map(([key, panel]) => `
-      <div class="panel-toggle-item ${panel.enabled ? 'active' : ''}" data-panel="${escapeHtml(key)}">
-        <div class="panel-toggle-checkbox">${panel.enabled ? '✓' : ''}</div>
-        <span class="panel-toggle-label">${escapeHtml(this.config.getLocalizedPanelName(key, panel.name))}</span>
+      <div class="panel-toggle-item ${panel?.enabled ? 'active' : ''}" data-panel="${escapeHtml(key)}">
+        <div class="panel-toggle-checkbox">${panel?.enabled ? '✓' : ''}</div>  
+        <span class="panel-toggle-label">${escapeHtml(this.config.getLocalizedPanelName(key, panel?.name || key))}</span>
       </div>
     `).join('');
   }
+  // private renderPanelsTab(): void {
+  //   const container = this.overlay.querySelector('#usPanelToggles');
+  //   if (!container) return;
+
+  //   const entries = this.getVisiblePanelEntries();
+  //   container.innerHTML = entries.map(([key, panel]) => `
+  //     <div class="panel-toggle-item ${panel.enabled ? 'active' : ''}" data-panel="${escapeHtml(key)}">
+  //       <div class="panel-toggle-checkbox">${panel.enabled ? '✓' : ''}</div>
+  //       <span class="panel-toggle-label">${escapeHtml(this.config.getLocalizedPanelName(key, panel.name))}</span>
+  //     </div>
+  //   `).join('');
+  // }
 
   private getAvailableRegions(): Array<{ key: string; label: string }> {
     const feedKeys = new Set(Object.keys(FEEDS));

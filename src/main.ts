@@ -253,7 +253,9 @@ localStorage.removeItem('wm-settings-open');
 // Initialize the native SQLite database in Tauri (no-op in browser)
   if ('__TAURI_INTERNALS__' in window || '__TAURI__' in window) {
     try {
-      await initializeDefaultUser();
+      initializeDefaultUser().catch((e) => {
+        console.error("Failed to initialize local DB:", e);
+      });
     } catch (e) {
       console.error("Failed to initialize local DB:", e);
     }

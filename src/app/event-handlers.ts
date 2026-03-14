@@ -257,6 +257,14 @@ export class EventHandlerManager implements AppModule {
 
     this.initDownloadDropdown();
 
+    document.addEventListener('keydown', (e) => {
+        // Shift + S to forcefully open settings on any variant
+        if (e.shiftKey && (e.key === 'S' || e.key === 's')) {
+          e.preventDefault();
+          this.ctx.unifiedSettings?.open();
+        }
+    });
+    
     this.boundStorageHandler = (e: StorageEvent) => {
       if (e.key === STORAGE_KEYS.panels && e.newValue) {
         try {

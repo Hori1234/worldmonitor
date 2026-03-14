@@ -1,32 +1,31 @@
 // src/db/schema.ts
-import { sqliteTable, text, integer, primaryKey, uniqueIndex, customType } from 'drizzle-orm/sqlite-core';
-import { type Endpoint } from '@/db/types/Feed/userFeed'; // Assuming your type path
+import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 import { relations } from 'drizzle-orm';
 
 
 // This is a reusable helper for any column that needs to store JSON.
 // This is the corrected, null-safe helper function.
-const jsonText = <TData>(name: string) =>
-  customType<{ data: TData | null; driverData: string | null }>({
-    dataType() {
-      return 'text';
-    },
-    toDriver(value: TData | null): string | null {
-      // Handles 'undefined' and 'null' from your code
-      if (value === undefined || value === null) {
-        return null;
-      }
-      return JSON.stringify(value);
-    },
-    fromDriver(value: string | null): TData | null {
-      // Handles 'NULL' from the database
-      if (value === null) {
-        return null;
-      }
-      return JSON.parse(value);
-    },
+// const jsonText = <TData>(name: string) =>
+//   customType<{ data: TData | null; driverData: string | null }>({
+//     dataType() {
+//       return 'text';
+//     },
+//     toDriver(value: TData | null): string | null {
+//       // Handles 'undefined' and 'null' from your code
+//       if (value === undefined || value === null) {
+//         return null;
+//       }
+//       return JSON.stringify(value);
+//     },
+//     fromDriver(value: string | null): TData | null {
+//       // Handles 'NULL' from the database
+//       if (value === null) {
+//         return null;
+//       }
+//       return JSON.parse(value);
+//     },
   
-  })(name);
+//   })(name);
 
 
 /**
