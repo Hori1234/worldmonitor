@@ -16933,6 +16933,14 @@ body.has-breaking-alert .panels-grid {
   overflow: hidden;
 }
 
+/* The state when the Database tab is clicked */
+.unified-settings-modal.database-active-modal {
+  max-width: 90vw !important;  /* Expands to 90% of screen width */
+  width: 1200px !important;    /* Sets a generous fixed desktop width */
+  height: 85vh !important;     /* Increases the height heavily */
+  max-height: 95vh !important; /* Safety limits to leave some background visible */
+}
+
 /* ─── Globe Map Styles ──────────────────────────────────────────────────────── */
 
 .globe-mode {

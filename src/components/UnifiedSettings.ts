@@ -10,6 +10,7 @@ import { escapeHtml } from '@/utils/sanitize';
 import { trackLanguageChange } from '@/services/analytics';
 import type { PanelConfig } from '@/types';
 import type { StatusPanel } from './StatusPanel';
+import { DatabaseManager } from './DBManager/DatabaseManager';
 
 const GEAR_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`;
 
@@ -32,7 +33,7 @@ export interface UnifiedSettingsConfig {
   onMapModeChange?: (useGlobe: boolean) => void;
 }
 
-type TabId = 'general' | 'panels' | 'sources' | 'status';
+type TabId = 'general' | 'panels' | 'sources' | 'status' | 'database';
 
 export class UnifiedSettings {
   private overlay: HTMLElement;
@@ -42,10 +43,12 @@ export class UnifiedSettings {
   private sourceFilter = '';
   private activePanelCategory = 'all';
   private panelFilter = '';
+  private dbManager: DatabaseManager;
   private escapeHandler: (e: KeyboardEvent) => void;
 
   constructor(config: UnifiedSettingsConfig) {
     this.config = config;
+    this.dbManager = new DatabaseManager();
 
     this.overlay = document.createElement('div');
     this.overlay.className = 'modal-overlay';
@@ -258,6 +261,7 @@ export class UnifiedSettings {
           <button class="${tabClass('panels')}" data-tab="panels" role="tab" aria-selected="${this.activeTab === 'panels'}" id="us-tab-panels" aria-controls="us-tab-panel-panels">${t('header.tabPanels')}</button>
           <button class="${tabClass('sources')}" data-tab="sources" role="tab" aria-selected="${this.activeTab === 'sources'}" id="us-tab-sources" aria-controls="us-tab-panel-sources">${t('header.tabSources')}</button>
           <button class="${tabClass('status')}" data-tab="status" role="tab" aria-selected="${this.activeTab === 'status'}" id="us-tab-status" aria-controls="us-tab-panel-status">${t('panels.status')}</button>
+          <button class="${tabClass('database')}" data-tab="database" role="tab" aria-selected="${this.activeTab === 'database'}" id="us-tab-database" aria-controls="us-tab-panel-database">${t('panels.database')}</button>
         </div>
         <div class="unified-settings-tab-panel${this.activeTab === 'general' ? ' active' : ''}" data-panel-id="general" id="us-tab-panel-general" role="tabpanel" aria-labelledby="us-tab-general">
           ${this.renderGeneralContent()}
@@ -291,6 +295,9 @@ export class UnifiedSettings {
         <div class="unified-settings-tab-panel${this.activeTab === 'status' ? ' active' : ''}" data-panel-id="status" id="us-tab-panel-status" role="tabpanel" aria-labelledby="us-tab-status">
           <div class="us-status-content" id="usStatusContent"></div>
         </div>
+        <div class="unified-settings-tab-panel${this.activeTab === 'database' ? ' active' : ''}" data-panel-id="database" id="us-tab-panel-database" role="tabpanel" aria-labelledby="us-tab-database"> 
+          <div class="us-database-content" id="usDatabaseContent"></div>
+        </div>
       </div>
     `;
 
@@ -301,11 +308,22 @@ export class UnifiedSettings {
     this.renderSourcesGrid();
     this.updateSourcesCounter();
     this.renderStatusTab();
+    this.renderDatabaseTab();
     if (!this.config.isDesktopApp) this.updateAiStatus();
   }
 
   private switchTab(tab: TabId): void {
     this.activeTab = tab;
+
+
+    const modalWindow = this.overlay.querySelector('.unified-settings-modal');
+    if (modalWindow) {
+      if (tab === 'database') {
+        modalWindow.classList.add('database-active-modal');
+      } else {
+        modalWindow.classList.remove('database-active-modal');
+      }
+    }
 
     // Update tab buttons
     this.overlay.querySelectorAll('.unified-settings-tab').forEach(el => {
@@ -729,4 +747,14 @@ export class UnifiedSettings {
 
     counter.textContent = t('header.sourcesEnabled', { enabled: String(enabledTotal), total: String(allSources.length) });
   }
+
+  private renderDatabaseTab(): void {
+    const container = this.overlay.querySelector('#usDatabaseContent');
+    if (!container) return;
+    container.innerHTML = `
+    <div class="unified-settings-tab-panel${this.activeTab === 'database' ? ' active' : ''}" data-panel-id="database" id="us-tab-panel-database" role="tabpanel" aria-labelledby="us-tab-database">
+          ${this.dbManager.render()}
+    </div>`;
+  }
+
 }
