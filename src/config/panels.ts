@@ -618,7 +618,7 @@ export const PANEL_CATEGORY_MAP: Record<string, { labelKey: string; panelKeys: s
   // All variants — essential panels
   core: {
     labelKey: 'header.panelCatCore',
-    panelKeys: ['map', 'live-news', 'live-webcams', 'insights', 'strategic-posture','popup-panel '],
+    panelKeys: ['map', 'live-news', 'live-webcams', 'insights', 'strategic-posture','popup-panel', 'global-analytics-nested-dashboard'],
   },
 
   // Full (geopolitical) variant
