@@ -208,8 +208,10 @@ export const DEFAULT_PANELS: Record<string, PanelConfig> = {
   'etf-flows': { name: 'BTC ETF Tracker', enabled: true, priority: 2 },
   stablecoins: { name: 'Stablecoins', enabled: true, priority: 2 },
   monitors: { name: 'My Monitors', enabled: true, priority: 2 },
-  'popup-panel': { name: 'Pop-Up Panel', enabled: true, priority: 2 }, 
-  'global-analytics-dashboard': { name: 'Global Analytics Dashboard', enabled: true, priority: 2 },
+  // Add this to your TECH_PANELS object:
+  // 'popup-panel': { name: 'Pop-Up Panel', enabled: true, priority: 2 },
+  // 'global-analytics-nested-dashboard': { name: 'Global Analytics Dashboard', enabled: true, priority: 2 },
+  // worldClock: { name: 'World Clock', enabled: true, priority: 2 },
 };
 
 // Tech-focused map layers (subset)
