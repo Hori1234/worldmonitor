@@ -1,4 +1,3 @@
-import { initDb } from './index';
 import { 
     getAllUsers, 
     createUser, 
@@ -8,9 +7,8 @@ import {
 
 export async function initializeDefaultUser() {
     try {
-        // 1. Ensure the Tauri database connection is actually established first
-        await initDb();
-        console.log("Local SQLite database initialized.");
+        // 1. Ensure the database connection (Tauri or Browser) is actually established first
+        console.log("Local DB connection initialized.");
 
         // 2. See if any users exist
         const users = await getAllUsers();

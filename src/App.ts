@@ -339,6 +339,7 @@ export class App {
   public async init(): Promise<void> {
     const initStart = performance.now();
     await initDB();
+    // await this.initializeDefaultUser();
     await initI18n();
     const aiFlow = getAiFlowSettings();
     if (aiFlow.browserModel || isDesktopRuntime()) {

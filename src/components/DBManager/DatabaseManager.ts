@@ -127,7 +127,9 @@ export class DatabaseManager {
       this.renderGrid();
     } catch (err) {
       console.error('Failed to fetch data', err);
-      this.showError('Navigation failed. Please check DB proxy setup.');
+      // 👇 Print the EXACT error to the screen so we can read it:
+      const msg = err instanceof Error ? err.message : String(err);
+      this.showError(`DB Error: ${msg}`);
     } finally {
       this.setLoading(false);
     }

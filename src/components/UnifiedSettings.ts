@@ -762,6 +762,8 @@ export class UnifiedSettings {
 
     render(this.dbManager.render(), dbSectionUI);
     dbcontainer.appendChild(dbSectionUI);
+
+    this.dbManager.bindEvents(dbSectionUI);
   }
 
 }
