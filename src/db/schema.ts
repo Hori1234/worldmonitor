@@ -1,5 +1,5 @@
 // src/db/schema.ts
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer,real } from 'drizzle-orm/sqlite-core';
 import { relations } from 'drizzle-orm';
 
 
@@ -94,6 +94,7 @@ export type NewEndpoint = typeof endpoints.$inferInsert;
 // One User -> Many Endpoints
 export const userRelations = relations(users, ({ many }) => ({
   endpoints: many(endpoints),
+  openskyPlanes: many(openskyPlanes),
 }));
 
 // One Endpoint -> Many Publications
@@ -123,3 +124,60 @@ export const feedItemsRelations = relations(feedItems, ({ one }) => ({
     references: [publications.id],
   }),
 }));
+
+// Adding the open sky network for the plane tracking
+/**
+ * Table 1: Open Sky Planes Data
+ * Stores the base aircraft metadata and tracks how many times the API worker has seen it.
+ */
+export const openskyPlanes = sqliteTable('opensky_planes', {
+  icao24: text('icao24').primaryKey(),
+  callsign: text('callsign'),
+  originCountry: text('origin_country').notNull(),
+  counterHits: integer('counter_hits').default(0).notNull(),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+});
+
+/**
+ * Table 2: Open Sky Planes Info
+ * Stores the actual temporal position history of the planes.
+ */
+export const openskyPlanePositions = sqliteTable('opensky_plane_positions', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  icao24: text('icao24').notNull().references(() => openskyPlanes.icao24, { onDelete: 'cascade' }),
+  timePosition: integer('time_position'),
+  lastContact: integer('last_contact').notNull(),
+  longitude: real('longitude'),
+  latitude: real('latitude'),
+  baroAltitude: real('baro_altitude'),
+  onGround: integer('on_ground', { mode: 'boolean' }).notNull(),
+  velocity: real('velocity'),
+  trueTrack: real('true_track'),
+  verticalRate: real('vertical_rate'),
+  sensors: text('sensors', { mode: 'json' }).$type<number[]>(),
+  geoAltitude: real('geo_altitude'),
+  squawk: text('squawk'),
+  spi: integer('spi', { mode: 'boolean' }).notNull(),
+  positionSource: integer('position_source').notNull(),
+  category: integer('category').notNull(),
+});
+
+/**
+ * Define the Drizzle 1-to-many relationship
+ * One Plane holds Many Positions
+ */
+export const openskyPlanesRelations = relations(openskyPlanes, ({ one, many }) => ({
+  user: one(users, {
+    fields: [openskyPlanes.userId],
+    references: [users.id],
+  }),
+  positions: many(openskyPlanePositions),
+}));
+
+export const openskyPlanePositionsRelations = relations(openskyPlanePositions, ({ one }) => ({
+  plane: one(openskyPlanes, {
+    fields: [openskyPlanePositions.icao24],
+    references: [openskyPlanes.icao24],
+  }),
+}));
+
