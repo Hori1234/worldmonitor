@@ -1,6 +1,7 @@
 import { db } from '../../db/index';
 import { users, endpoints, publications, feedItems } from '../../db/schema';
 import { eq } from 'drizzle-orm';
+import { html, TemplateResult } from 'lit-html';
 
 type TableName = 'users' | 'endpoints' | 'publications' | 'feedItems';
 
@@ -12,8 +13,10 @@ export class DatabaseManager {
 
   constructor() {}
 
-  public render(): string {
-    return `
+  public render(): TemplateResult {
+
+
+    return html`
       <div class="db-manager">
         <style>
           .db-manager { display: flex; flex-direction: column; height: 100%; gap: 1rem; color: #e2e8f0; }
@@ -52,6 +55,9 @@ export class DatabaseManager {
         </div>
       </div>
     `;
+
+   
+
   }
 
   public bindEvents(container: HTMLElement | null): void {
