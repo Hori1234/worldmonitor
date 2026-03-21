@@ -131,6 +131,7 @@
   "header": {
     "world": "WORLD",
     "tech": "TECH",
+    "aviation": "AVIATION",
     "live": "LIVE",
     "search": "Search",
     "settings": "SETTINGS",

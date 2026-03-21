@@ -66,6 +66,8 @@ export const LAYER_REGISTRY: Record<keyof MapLayers, LayerDefinition> = {
   happiness:                def('happiness',                '&#128522;', 'happiness',                'World Happiness'),
   speciesRecovery:          def('speciesRecovery',          '&#128062;', 'speciesRecovery',          'Species Recovery'),
   renewableInstallations:   def('renewableInstallations',   '&#9889;',   'renewableInstallations',   'Clean Energy'),
+  radar:                    def('radar',                    '&#128200;', 'radar',                    'Radar'),
+
 };
 
 const VARIANT_LAYER_ORDER: Record<MapVariant, Array<keyof MapLayers>> = {

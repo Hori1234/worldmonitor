@@ -204,7 +204,7 @@ export class App {
       mapLayers.cyberThreats = false;
     }
     // One-time migration: reduce default-enabled sources (full variant only)
-    if (currentVariant === 'full') {
+    if (currentVariant === 'full' || currentVariant === 'aviation') {
       const baseKey = 'worldmonitor-sources-reduction-v3';
       if (!localStorage.getItem(baseKey)) {
         const defaultDisabled = computeDefaultDisabledSources();

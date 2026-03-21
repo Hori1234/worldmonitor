@@ -153,6 +153,15 @@ export class PanelLayoutManager implements AppModule {
               <span class="variant-icon">📈</span>
               <span class="variant-label">${t('header.finance')}</span>
             </a>
+            <span class="variant-divider"></span>
+            <a href="${vHref('aviation', 'https://aviation.worldmonitor.app')}"
+               class="variant-option ${SITE_VARIANT === 'aviation' ? 'active' : ''}"
+               data-variant="aviation"
+               ${vTarget('aviation')}
+               title="${t('header.aviation')}${SITE_VARIANT === 'aviation' ? ` ${t('common.currentVariant')}` : ''}">
+              <span class="variant-icon">✈️</span>
+              <span class="variant-label">${t('header.aviation')}</span>
+            </a>
             ${SITE_VARIANT === 'happy' ? `<span class="variant-divider"></span>
             <a href="${vHref('happy', 'https://happy.worldmonitor.app')}"
                class="variant-option active"
@@ -228,6 +237,7 @@ export class PanelLayoutManager implements AppModule {
           { key: 'full', icon: '🌍', label: t('header.world') },
           { key: 'tech', icon: '💻', label: t('header.tech') },
           { key: 'finance', icon: '📈', label: t('header.finance') },
+          { key: 'aviation', icon: '✈️', label: t('header.aviation') }
         ];
         if (SITE_VARIANT === 'happy') variants.push({ key: 'happy', icon: '☀️', label: 'Good News' });
         return variants.map(v =>

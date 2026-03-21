@@ -104,4 +104,26 @@ export const VARIANT_META: { full: VariantMeta; [k: string]: VariantMeta } = {
       'Market radar signals',
     ],
   },
+  aviation: {
+    title: 'Aviation Monitor - Real-Time Global Aviation Dashboard',
+    description: 'Real-time global aviation dashboard tracking commercial flights, private jets, air traffic control, and aviation news worldwide.',
+    keywords: 'aviation dashboard, flight tracking, air traffic control, commercial flights, private jets, aviation news, airline monitoring, airport activity, flight delays, aviation incidents, airspace monitoring',
+    url: 'https://aviation.worldmonitor.app/',
+    siteName: 'Aviation Monitor',
+    shortName: 'AviationMonitor',
+    subject: 'Global Aviation, Flight Tracking, and Air Traffic Intelligence',
+    classification: 'Aviation Dashboard, Flight Tracker, Air Traffic Intelligence',
+    categories: ['aviation', 'news'],
+    features: [
+      'Real-time flight tracking',
+      'Air traffic control monitoring',
+      'Commercial airline tracking',
+      'Private jet monitoring',
+      'Airport activity mapping',
+      'Flight delay alerts',
+      'Aviation incident tracking',
+      'Airspace monitoring',
+      'Aviation news aggregation',
+    ],
+  }
 };

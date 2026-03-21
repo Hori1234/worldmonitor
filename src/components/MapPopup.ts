@@ -1,5 +1,5 @@
 import type { ConflictZone, Hotspot, NewsItem, MilitaryBase, StrategicWaterway, APTGroup, NuclearFacility, EconomicCenter, GammaIrradiator, Pipeline, UnderseaCable, CableAdvisory, RepairShip, InternetOutage, AIDataCenter, AisDisruptionEvent, SocialUnrestEvent, MilitaryFlight, MilitaryVessel, MilitaryFlightCluster, MilitaryVesselCluster, NaturalEvent, Port, Spaceport, CriticalMineralProject, CyberThreat, GeopoliticalBoundary } from '@/types';
-import type { AirportDelayAlert } from '@/services/aviation';
+import type { AirportDelayAlert, FlightState } from '@/services/aviation';
 import type { Earthquake } from '@/services/earthquakes';
 import type { WeatherAlert } from '@/services/weather';
 import { UNDERSEA_CABLES } from '@/config';
@@ -14,7 +14,21 @@ import { getNaturalEventIcon } from '@/services/eonet';
 import { getHotspotEscalation, getEscalationChange24h } from '@/services/hotspot-escalation';
 import { getCableHealthRecord } from '@/services/cable-health';
 
-export type PopupType = 'conflict' | 'hotspot' | 'earthquake' | 'weather' | 'base' | 'waterway' | 'apt' | 'cyberThreat' | 'nuclear' | 'economic' | 'irradiator' | 'pipeline' | 'cable' | 'cable-advisory' | 'repair-ship' | 'outage' | 'datacenter' | 'datacenterCluster' | 'ais' | 'protest' | 'protestCluster' | 'flight' | 'militaryFlight' | 'militaryVessel' | 'militaryFlightCluster' | 'militaryVesselCluster' | 'natEvent' | 'port' | 'spaceport' | 'mineral' | 'startupHub' | 'cloudRegion' | 'techHQ' | 'accelerator' | 'techEvent' | 'techHQCluster' | 'techEventCluster' | 'techActivity' | 'geoActivity' | 'stockExchange' | 'financialCenter' | 'centralBank' | 'commodityHub' | 'iranEvent' | 'gpsJamming' | 'geopoliticalBoundary';
+export type PopupType = 'conflict' | 'hotspot' | 'earthquake' | 'weather' | 'base' | 'waterway' | 'apt' | 'cyberThreat' | 'nuclear' | 'economic' | 'irradiator' | 'pipeline' | 'cable' | 'cable-advisory' | 'repair-ship' | 'outage' | 'datacenter' | 'datacenterCluster' | 'ais' | 'protest' | 'protestCluster' | 'flight' | 'militaryFlight' | 'militaryVessel' | 'militaryFlightCluster' | 'militaryVesselCluster' | 'natEvent' | 'port' | 'spaceport' | 'mineral' | 'startupHub' | 'cloudRegion' | 'techHQ' | 'accelerator' | 'techEvent' | 'techHQCluster' | 'techEventCluster' | 'techActivity' | 'geoActivity' | 'stockExchange' | 'financialCenter' | 'centralBank' | 'commodityHub' | 'iranEvent' | 'gpsJamming' | 'geopoliticalBoundary' | 'radar';
+
+interface RadarPopupData {
+  id: string;
+  name: string;
+  description?: string;
+  location: string;
+  lat: number;
+  lng: number;
+  country: string;
+  startDate: string;
+  endDate: string;
+  url: string | null;
+  daysUntil: number;
+}
 
 interface TechEventPopupData {
   id: string;
@@ -144,7 +158,7 @@ interface DatacenterClusterData {
 
 interface PopupData {
   type: PopupType;
-  data: ConflictZone | Hotspot | Earthquake | WeatherAlert | MilitaryBase | StrategicWaterway | APTGroup | CyberThreat | NuclearFacility | EconomicCenter | GammaIrradiator | Pipeline | UnderseaCable | CableAdvisory | RepairShip | InternetOutage | AIDataCenter | AisDisruptionEvent | SocialUnrestEvent | AirportDelayAlert | MilitaryFlight | MilitaryVessel | MilitaryFlightCluster | MilitaryVesselCluster | NaturalEvent | Port | Spaceport | CriticalMineralProject | StartupHub | CloudRegion | TechHQ | Accelerator | TechEventPopupData | TechHQClusterData | TechEventClusterData | ProtestClusterData | DatacenterClusterData | TechHubActivity | GeoHubActivity | StockExchangePopupData | FinancialCenterPopupData | CentralBankPopupData | CommodityHubPopupData | IranEventPopupData | GpsJammingPopupData | GeopoliticalBoundary;
+  data: ConflictZone | Hotspot | Earthquake | WeatherAlert | MilitaryBase | StrategicWaterway | APTGroup | CyberThreat | NuclearFacility | EconomicCenter | GammaIrradiator | Pipeline | UnderseaCable | CableAdvisory | RepairShip | InternetOutage | AIDataCenter | AisDisruptionEvent | SocialUnrestEvent | AirportDelayAlert | MilitaryFlight | MilitaryVessel | MilitaryFlightCluster | MilitaryVesselCluster | NaturalEvent | Port | Spaceport | CriticalMineralProject | StartupHub | CloudRegion | TechHQ | Accelerator | TechEventPopupData | TechHQClusterData | TechEventClusterData | ProtestClusterData | DatacenterClusterData | TechHubActivity | GeoHubActivity | StockExchangePopupData | FinancialCenterPopupData | CentralBankPopupData | CommodityHubPopupData | IranEventPopupData | GpsJammingPopupData | GeopoliticalBoundary | RadarPopupData;
   relatedNews?: NewsItem[];
   x: number;
   y: number;
@@ -458,6 +472,8 @@ export class MapPopup {
         return this.renderIranEventPopup(data.data as IranEventPopupData);
       case 'gpsJamming':
         return this.renderGpsJammingPopup(data.data as GpsJammingPopupData);
+      case 'radar':
+        return this.renderRadarPopup(data.data as RadarPopupData);
       default:
         return '';
     }
@@ -1155,6 +1171,38 @@ export class MapPopup {
           <div class="popup-stat">
             <span class="stat-label">${t('popups.updated')}</span>
             <span class="stat-value">${delay.updatedAt.toLocaleTimeString()}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  private renderRadarPopup(radar: RadarPopupData): string {
+    return `
+      <div class="popup-header radar">
+        <span class="popup-title">${escapeHtml(radar.name)}</span>
+        <span class="popup-badge high">${t('popups.radar')}</span>
+        <button class="popup-close" aria-label="Close">×</button>
+      </div>
+      <div class="popup-body">
+        <div class="popup-subtitle">${escapeHtml(radar.description || '')}</div>
+        <div class="popup-location">${escapeHtml(radar.location)}</div>
+        <div class="popup-stats">
+          <div class="popup-stat">
+            <span class="stat-label">${t('popups.startDate')}</span>
+            <span class="stat-value">${escapeHtml(radar.startDate)}</span>
+          </div>
+          <div class="popup-stat">
+            <span class="stat-label">${t('popups.endDate')}</span>
+            <span class="stat-value">${escapeHtml(radar.endDate)}</span>
+          </div>
+          <div class="popup-stat">
+            <span class="stat-label">${t('popups.daysUntil')}</span>
+            <span class="stat-value">${escapeHtml(radar.daysUntil.toString())}</span>
+          </div>
+          <div class="popup-stat">
+            <span class="stat-label">${t('popups.url')}</span>
+            <span class="stat-value">${radar.url ? `<a href="${escapeHtml(radar.url)}" target="_blank">${escapeHtml(radar.url)}</a>` : t('popups.unknown')}</span>
           </div>
         </div>
       </div>
