@@ -14,10 +14,9 @@ service AviationService {
     option (sebuf.http.config) = {path: "/list-airport-delays", method: HTTP_METHOD_GET};
   }
   // Retrieves real-time radar state vectors from OpenSky
+  // Retrieves real-time radar state vectors from OpenSky
   rpc GetOpenSkyRadar(GetOpenSkyRadarRequest) returns (GetOpenSkyRadarResponse) {
-    option (sebuf.http.route) = {
-      get: "/api/aviation/v1/open-sky-radar"
-    };
+    option (sebuf.http.config) = {path: "/get-open-sky-radar", method: HTTP_METHOD_GET};
   }
   
 }
