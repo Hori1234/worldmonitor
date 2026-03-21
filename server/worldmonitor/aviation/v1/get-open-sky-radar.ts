@@ -1,55 +1,55 @@
 import type { 
-  GetOpenSkyRadarRequest, 
-  GetOpenSkyRadarResponse,
-  RadarFlightState 
-} from '../../../../src/generated/server/worldmonitor/aviation/v1/open_sky_radar';
+  AviationServiceHandler,
+  ServerContext,
+  GetOpenSkyRadarRequest,
+  GetOpenSkyRadarResponse
+} from '../../../../src/generated/server/worldmonitor/aviation/v1/service_server';
 
-export const getOpenSkyRadar = async (
-  request: GetOpenSkyRadarRequest
+export const getOpenSkyRadar: AviationServiceHandler['getOpenSkyRadar'] = async (
+  _ctx: ServerContext,
+  req: GetOpenSkyRadarRequest
 ): Promise<GetOpenSkyRadarResponse> => {
-  // 1. Build the OpenSky Request URL (using bounding box if provided)
+  // Build OpenSky Network API URL
   const url = new URL('https://opensky-network.org/api/states/all');
   
-  if (request.lamin && request.lomin && request.lamax && request.lomax) {
-    url.searchParams.append('lamin', request.lamin.toString());
-    url.searchParams.append('lomin', request.lomin.toString());
-    url.searchParams.append('lamax', request.lamax.toString());
-    url.searchParams.append('lomax', request.lomax.toString());
+  if (req.lamin && req.lomin && req.lamax && req.lomax) {
+    url.searchParams.append('lamin', req.lamin.toString());
+    url.searchParams.append('lomin', req.lomin.toString());
+    url.searchParams.append('lamax', req.lamax.toString());
+    url.searchParams.append('lomax', req.lomax.toString());
   }
 
-  // 2. Fetch the raw array of arrays from OpenSky
   const response = await fetch(url.toString());
   if (!response.ok) {
-    throw new Error(`Failed to fetch OpenSky data: ${response.statusText}`);
+    throw new Error(`OpenSky API error: ${response.status}`);
   }
 
-  const data = await response.json();
+  const data: any = await response.json();
 
-  // 3. Map the raw array to the RadarFlightState Protobuf message
-  const states: RadarFlightState[] = (data.states || []).map((state: any[]) => ({
+  // Map the raw state vectors array to the proto definition
+  const states = (data.states || []).map((state: any[]) => ({
     icao24: String(state[0]),
     callsign: state[1] ? String(state[1]).trim() : "",
-    origin_country: String(state[2]),
-    time_position: state[3] ? BigInt(state[3]) : undefined,
-    last_contact: state[4] ? BigInt(state[4]) : undefined,
-    longitude: state[5] !== null ? Number(state[5]) : undefined,
-    latitude: state[6] !== null ? Number(state[6]) : undefined,
-    baro_altitude: state[7] !== null ? Number(state[7]) : undefined,
-    on_ground: Boolean(state[8]),
-    velocity: state[9] !== null ? Number(state[9]) : undefined,
-    true_track: state[10] !== null ? Number(state[10]) : undefined,
-    vertical_rate: state[11] !== null ? Number(state[11]) : undefined,
-    sensors: Array.isArray(state[12]) ? state[12].map(Number) : [],
-    geo_altitude: state[13] !== null ? Number(state[13]) : undefined,
+    originCountry: String(state[2]),
+    timePosition: state[3] ? Number(state[3]) : undefined,
+    lastContact: state[4] ? Number(state[4]) : undefined,
+    longitude: state[5] ?? undefined,
+    latitude: state[6] ?? undefined,
+    baroAltitude: state[7] ?? undefined,
+    onGround: Boolean(state[8]),
+    velocity: state[9] ?? undefined,
+    trueTrack: state[10] ?? undefined,
+    verticalRate: state[11] ?? undefined,
+    sensors: Array.isArray(state[12]) ? state[12] : [],
+    geoAltitude: state[13] ?? undefined,
     squawk: state[14] ? String(state[14]) : undefined,
     spi: Boolean(state[15]),
-    position_source: state[16] !== null ? Number(state[16]) : 0,
-    category: state[17] !== null ? Number(state[17]) : 0,
+    positionSource: state[16] ?? 0,
+    category: state[17] ?? 0,
   }));
 
-  // 4. Return the response matching the proto response structure
   return {
-    time: data.time ? BigInt(data.time) : BigInt(Math.floor(Date.now() / 1000)),
+    time: data.time ? Number(data.time) : Math.floor(Date.now() / 1000),
     states,
   };
 };
