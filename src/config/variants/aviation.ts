@@ -102,7 +102,7 @@ export const DEFAULT_MAP_LAYERS: MapLayers = {
   iranAttacks: false,
   ciiChoropleth: false,
   dayNight: false,
-  radar: true,
+  radar: false,
 };
 
 // Mobile-specific defaults for geopolitical

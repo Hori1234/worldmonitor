@@ -369,6 +369,19 @@ export class MapComponent {
       'waterways',                                        // labels
       'ciiChoropleth',                                    // CII heat-map (DeckGL only, shown as disabled toggle)
     ];
+    const aviationLayers: (keyof MapLayers)[] = [
+      'iranAttacks',                                      // Iran conflict
+      'conflicts', 'hotspots', 'sanctions', 'protests',  // geopolitical
+      'bases', 'nuclear', 'irradiators',                 // military/strategic
+      'military',                                         // military tracking (flights + vessels)
+      'cables', 'pipelines', 'outages', 'datacenters',   // infrastructure
+      // cyberThreats is intentionally hidden on SVG/mobile fallback (DeckGL desktop only)
+      'ais', 'flights','radar', 'gpsJamming',                      // transport/interference
+      'natural', 'weather',                               // natural
+      'economic',                                         // economic
+      'waterways',                                        // labels
+      'ciiChoropleth',
+    ];
     const techLayers: (keyof MapLayers)[] = [
       'cables', 'datacenters', 'outages',                // tech infrastructure
       'startupHubs', 'cloudRegions', 'accelerators', 'techHQs', 'techEvents', // tech ecosystem
@@ -384,7 +397,7 @@ export class MapComponent {
     const happyLayers: (keyof MapLayers)[] = [
       'positiveEvents', 'kindness', 'happiness', 'speciesRecovery', 'renewableInstallations',
     ];
-    const layers = SITE_VARIANT === 'tech' ? techLayers : SITE_VARIANT === 'finance' ? financeLayers : SITE_VARIANT === 'happy' ? happyLayers : fullLayers;
+    const layers = SITE_VARIANT === 'aviation' ? aviationLayers : SITE_VARIANT === 'tech' ? techLayers : SITE_VARIANT === 'finance' ? financeLayers : SITE_VARIANT === 'happy' ? happyLayers : fullLayers;
     const layerLabelKeys: Partial<Record<keyof MapLayers, string>> = {
       hotspots: 'components.deckgl.layers.intelHotspots',
       conflicts: 'components.deckgl.layers.conflictZones',
@@ -415,6 +428,7 @@ export class MapComponent {
       iranAttacks: 'components.deckgl.layers.iranAttacks',
       gpsJamming: 'components.deckgl.layers.gpsJamming',
       ciiChoropleth: 'components.deckgl.layers.ciiChoropleth',
+      radar: 'components.deckgl.layers.openSkyRadar'
     };
     const getLayerLabel = (layer: keyof MapLayers): string => {
       if (layer === 'sanctions') return t('components.deckgl.layerHelp.labels.sanctions');
