@@ -532,6 +532,7 @@ export interface MapLayers {
   datacenters: boolean;
   protests: boolean;
   flights: boolean;
+  radar: boolean;
   military: boolean;
   natural: boolean;
   spaceports: boolean;

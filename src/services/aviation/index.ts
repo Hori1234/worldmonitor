@@ -1,5 +1,6 @@
 import {
   AviationServiceClient,
+  RadarFlightState as ProtoRadarFlightState,
   type AirportDelayAlert as ProtoAlert,
 } from '@/generated/client/worldmonitor/aviation/v1/service_client';
 import { createCircuitBreaker } from '@/utils';
@@ -30,6 +31,28 @@ export interface AirportDelayAlert {
   reason?: string;
   source: FlightDelaySource;
   updatedAt: Date;
+}
+
+// Consumer-friendly map view of the radar state
+export interface FlightState {
+  icao24: string;
+  callsign: string;
+  originCountry: string;
+  timePosition?: Date;
+  lastContact?: Date;
+  longitude?: number;
+  latitude?: number;
+  baroAltitude?: number;
+  onGround: boolean;
+  velocity?: number;
+  trueTrack?: number;
+  verticalRate?: number;
+  sensors: number[];
+  geoAltitude?: number;
+  squawk?: string;
+  spi: boolean;
+  positionSource: number;
+  category: number;
 }
 
 // --- Internal: proto -> legacy mapping ---
@@ -88,11 +111,43 @@ function toDisplayAlert(proto: ProtoAlert): AirportDelayAlert {
   };
 }
 
+
+function toDisplayFlightState(proto: ProtoRadarFlightState) {
+  return {
+    icao24: proto.icao24,
+    callsign: proto.callsign,
+    originCountry: proto.originCountry,
+    timePosition: proto.timePosition ? new Date(proto.timePosition * 1000) : undefined,
+    lastContact: proto.lastContact ? new Date(proto.lastContact * 1000) : undefined,
+    longitude: proto.longitude,
+    latitude: proto.latitude,
+    baroAltitude: proto.baroAltitude,
+    onGround: proto.onGround,
+    velocity: proto.velocity,
+    trueTrack: proto.trueTrack,
+    verticalRate: proto.verticalRate,
+    sensors: proto.sensors,
+    geoAltitude: proto.geoAltitude,
+    squawk: proto.squawk,
+    spi: proto.spi,
+    positionSource: proto.positionSource,
+    category: proto.category,
+  };
+}
+
+
+
 // --- Client + circuit breaker ---
 
 const client = new AviationServiceClient('', { fetch: (...args) => globalThis.fetch(...args) });
 const breaker = createCircuitBreaker<AirportDelayAlert[]>({ name: 'Flight Delays v2', cacheTtlMs: 2 * 60 * 60 * 1000, persistCache: true });
 
+// Note: Circuit breaker typing must match the eventual output mapping to `FlightState`
+const radarBreaker = createCircuitBreaker<FlightState[]>({ 
+  name: 'OpenSky Radar', 
+  cacheTtlMs: 30 * 1000,   // Cache for 30s instead of 2 hours, as radar objects move fast
+  persistCache: false 
+});
 // --- Main fetch (public API) ---
 
 export async function fetchFlightDelays(): Promise<AirportDelayAlert[]> {
@@ -104,5 +159,16 @@ export async function fetchFlightDelays(): Promise<AirportDelayAlert[]> {
       cursor: '',
     });
     return response.alerts.map(toDisplayAlert);
+  }, []);
+}
+
+
+
+export async function fetchRadar(): Promise<FlightState[]> {
+  return radarBreaker.execute(async () => {
+    const response = await client.getOpenSkyRadar({});
+    
+    if (!response.states) return [];
+    return response.states.map(toDisplayFlightState);
   }, []);
 }

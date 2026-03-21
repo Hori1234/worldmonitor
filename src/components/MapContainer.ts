@@ -28,7 +28,7 @@ import type {
   CyberThreat,
   CableHealthRecord,
 } from '@/types';
-import type { AirportDelayAlert } from '@/services/aviation';
+import type { AirportDelayAlert,FlightState } from '@/services/aviation';
 import type { DisplacementFlow } from '@/services/displacement';
 import type { Earthquake } from '@/services/earthquakes';
 import type { ClimateAnomaly } from '@/services/climate';
@@ -323,6 +323,22 @@ export class MapContainer {
       this.deckGLMap?.setFlightDelays(delays);
     } else {
       this.svgMap?.setFlightDelays(delays);
+    }
+  }
+
+  public setRadarData(flights: FlightState[]): void {
+    if (this.useGlobe) { 
+      // If you haven't implemented globe yet, you can leave this empty or pass it along.
+      // this.globeMap?.setRadarData(flights); 
+      return;
+    }
+    
+    if (isMobileDevice()) {
+      // D3 SVG Mobile
+      // this.svgMap?.setRadarData(flights);
+    } else {
+      // Desktop WebGL
+      this.deckGLMap?.setRadarData(flights);
     }
   }
 

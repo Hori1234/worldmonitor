@@ -32,6 +32,7 @@ import {
   fetchProtestEvents,
   getProtestStatus,
   fetchFlightDelays,
+  fetchRadar,
   fetchMilitaryFlights,
   fetchMilitaryVessels,
   initMilitaryVesselStream,
@@ -304,6 +305,17 @@ export class DataLoaderManager implements AppModule {
         tasks.push({ name: 'supplyChain', task: runGuarded('supplyChain', () => this.loadSupplyChain()) });
       }
     }
+
+
+    // Now, push your aviation-specific loads when the variant is active!
+    // And allow full context to get it too if the layer is on.
+    if ((SITE_VARIANT === 'aviation')) {
+        tasks.push({ name: 'flights', task: runGuarded('flights', () => this.loadFlightDelays()) });
+        tasks.push({ name: 'military', task: runGuarded('military', () => this.loadMilitary()) });
+        tasks.push({ name: 'radar', task: runGuarded('radar', () => this.loadRadarMap()) });
+    }
+
+  
 
     // Progress charts data (happy variant only)
     if (SITE_VARIANT === 'happy') {
@@ -1735,6 +1747,28 @@ export class DataLoaderManager implements AppModule {
       this.ctx.statusPanel?.updateApi('FAA', { status: 'error' });
     }
   }
+
+  async loadRadarMap(): Promise<void> {
+      try {
+        const flights = await fetchRadar();
+        
+        // Pass data through central API to your map objects defined above
+        this.ctx.map?.setRadarData(flights);
+        
+        // Let the status panel know whether it succeeded
+        this.ctx.map?.setLayerReady('radar', flights.length > 0);
+        this.ctx.statusPanel?.updateFeed('Radar', {
+          status: 'ok',
+          itemCount: flights.length,
+        });
+        this.ctx.statusPanel?.updateApi('OpenSky', { status: 'ok' });
+
+      } catch (err) {
+        console.error('[DataLoader] Failed to load live radar map', err);
+        this.ctx.map?.setLayerReady('radar', false);
+        this.ctx.statusPanel?.updateFeed('Radar', { status: 'error' });
+      }
+    }
 
   async loadMilitary(): Promise<void> {
     if (this.ctx.intelligenceCache.military) {

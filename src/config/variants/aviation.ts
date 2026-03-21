@@ -160,8 +160,8 @@ export const MOBILE_DEFAULT_MAP_LAYERS: MapLayers = {
 };
 
 export const VARIANT_CONFIG: VariantConfig = {
-  name: 'full',
-  description: 'Full geopolitical intelligence dashboard',
+  name: 'aviation',
+  description: 'Full aviation intelligence dashboard',
   panels: DEFAULT_PANELS,
   mapLayers: DEFAULT_MAP_LAYERS,
   mobileMapLayers: MOBILE_DEFAULT_MAP_LAYERS,

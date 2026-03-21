@@ -36,7 +36,7 @@ import type {
   MilitaryBaseEnriched,
 } from '@/types';
 import { fetchMilitaryBases, type MilitaryBaseCluster as ServerBaseCluster } from '@/services/military-bases';
-import type { AirportDelayAlert } from '@/services/aviation';
+import type { AirportDelayAlert ,FlightState} from '@/services/aviation';
 import type { IranEvent } from '@/services/conflict';
 import type { GpsJamHex } from '@/services/gps-interference';
 import type { DisplacementFlow } from '@/services/displacement';
@@ -309,7 +309,12 @@ export class DeckGLMap {
   private naturalEvents: NaturalEvent[] = [];
   private firmsFireData: Array<{ lat: number; lon: number; brightness: number; frp: number; confidence: number; region: string; acq_date: string; daynight: string }> = [];
   private techEvents: TechEventMarker[] = [];
+  
+  // Aviation data
   private flightDelays: AirportDelayAlert[] = [];
+  private radarData: FlightState[] = [];
+
+  // Related assets for popups
   private news: NewsItem[] = [];
   private newsLocations: Array<{ lat: number; lon: number; title: string; threatLevel: string; timestamp?: Date }> = [];
   private newsLocationFirstSeen = new Map<string, number>();
@@ -1044,6 +1049,9 @@ export class DeckGLMap {
     const filteredOutages = mapLayers.outages ? this.filterByTime(this.outages, (outage) => outage.pubDate) : [];
     const filteredCableAdvisories = mapLayers.cables ? this.filterByTime(this.cableAdvisories, (advisory) => advisory.reported) : [];
     const filteredFlightDelays = mapLayers.flights ? this.filterByTime(this.flightDelays, (delay) => delay.updatedAt) : [];
+    const filteredRadar = this.filterByTime(this.radarData, (f) => f.timePosition || new Date());
+    
+    // const filteredFlightRadar = mapLayers.radar ? this.filterByTime(this.radarData, (flight) => flight.lastSeen) : [];
     const filteredMilitaryFlights = mapLayers.military ? this.filterByTime(this.militaryFlights, (flight) => flight.lastSeen) : [];
     const filteredMilitaryVessels = mapLayers.military ? this.filterByTime(this.militaryVessels, (vessel) => vessel.lastAisUpdate) : [];
     const filteredMilitaryFlightClusters = mapLayers.military ? this.filterMilitaryFlightClustersByTime(this.militaryFlightClusters) : [];
@@ -1194,6 +1202,15 @@ export class DeckGLMap {
     // Flight delays layer
     if (mapLayers.flights && filteredFlightDelays.length > 0) {
       layers.push(this.createFlightDelaysLayer(filteredFlightDelays));
+    }
+
+    // Radar layer (OpenSky live aircraft)
+    if (mapLayers.radar && this.radarData.length > 0) {
+        // Filter by time if you want them to respect the history slider, 
+        // Otherwise just pass this.radarData directly!
+        if (filteredRadar.length > 0) {
+          layers.push(this.createRadarLayer(filteredRadar));
+        }
     }
 
     // Protests layer (Supercluster-based deck.gl layers)
@@ -1629,6 +1646,35 @@ export class DeckGLMap {
       radiusMinPixels: 4,
       radiusMaxPixels: 15,
       pickable: true,
+    });
+  }
+
+  private createRadarLayer(flights: FlightState[]): ScatterplotLayer {
+    return new ScatterplotLayer({
+      id: 'radar-layer',
+      data: flights,
+      // Map valid lon/lat fields. Flights with nulls should be gracefully handled or filtered out
+      getPosition: (d) => [d.longitude || 0, d.latitude || 0],
+      getRadius: (d) => {
+        // You can make heavy aircraft larger depending on their category or velocity!
+        if (d.velocity && d.velocity > 250) return 9000;
+        if (d.onGround) return 4000;
+        return 6000;
+      },
+      getFillColor: (d) => {
+        if (d.onGround) return [180, 180, 180, 200] as [number, number, number, number]; // Grey for grounded
+        if (d.velocity && d.velocity > 250) return [255, 50, 50, 200] as [number, number, number, number]; // Red for very fast
+        return [255, 140, 0, 200] as [number, number, number, number]; // Standard Orange
+      },
+      radiusMinPixels: 2,
+      radiusMaxPixels: 10,
+      pickable: true,
+      onClick: (info) => {
+        // Optional placeholder for when users click an airplane
+        if (info.object) {
+          console.log(`Radar Clicked: ${info.object.callsign}`);
+        }
+      }
     });
   }
 
@@ -4019,6 +4065,11 @@ export class DeckGLMap {
   public setFlightDelays(delays: AirportDelayAlert[]): void {
     this.flightDelays = delays;
     this.render();
+  }
+
+  public setRadarData(flights: FlightState[]): void {
+    this.radarData = flights;
+    this.updateLayers(); // This tells DeckGL to redraw!
   }
 
   public setMilitaryFlights(flights: MilitaryFlight[], clusters: MilitaryFlightCluster[] = []): void {
