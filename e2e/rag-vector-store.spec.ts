@@ -9,9 +9,10 @@ test.describe('RAG vector store (worker-side)', () => {
     sharedPage = await browser.newPage();
     await sharedPage.goto('/tests/runtime-harness.html');
     const supported = await sharedPage.evaluate(async () => {
-      const { initI18n } = await import('/src/services/i18n.ts');
+      // const { initI18n } = await import('/src/services/i18n.ts');
+      const { initI18n } = await import('@/services/i18n.ts');
       await initI18n();
-      const { mlWorker } = await import('/src/services/ml-worker.ts');
+      const { mlWorker } = await import('@/services/ml-worker.ts');
       const ok = await mlWorker.init();
       if (!ok) return false;
       await mlWorker.loadModel('embeddings');
@@ -26,7 +27,7 @@ test.describe('RAG vector store (worker-side)', () => {
 
   async function clearVectorDB() {
     await sharedPage.evaluate(async () => {
-      const { mlWorker } = await import('/src/services/ml-worker.ts');
+      const { mlWorker } = await import('@/services/ml-worker.ts');
       await mlWorker.vectorStoreReset();
     });
   }
@@ -34,7 +35,7 @@ test.describe('RAG vector store (worker-side)', () => {
   test('ingest → count → search round-trip', async () => {
     await clearVectorDB();
     const result = await sharedPage.evaluate(async () => {
-      const { mlWorker } = await import('/src/services/ml-worker.ts');
+      const { mlWorker } = await import('@/services/ml-worker.ts');
 
       const items = [
         { text: 'Iran sanctions debate intensifies in Washington', pubDate: Date.now() - 86400000, source: 'Reuters', url: 'https://example.com/1' },
@@ -59,7 +60,7 @@ test.describe('RAG vector store (worker-side)', () => {
   test('minScore filtering excludes dissimilar results', async () => {
     await clearVectorDB();
     const result = await sharedPage.evaluate(async () => {
-      const { mlWorker } = await import('/src/services/ml-worker.ts');
+      const { mlWorker } = await import('@/services/ml-worker.ts');
 
       await mlWorker.vectorStoreIngest([
         { text: 'Weather forecast sunny skies tomorrow morning', pubDate: Date.now(), source: 'Weather', url: '' },
@@ -74,7 +75,7 @@ test.describe('RAG vector store (worker-side)', () => {
 
   test('search returns empty when embeddings model not loaded', async () => {
     const result = await sharedPage.evaluate(async () => {
-      const { mlWorker } = await import('/src/services/ml-worker.ts');
+      const { mlWorker } = await import('@/services/ml-worker.ts');
       await mlWorker.unloadModel('embeddings');
       const results = await mlWorker.vectorStoreSearch(['test query'], 5, 0.3);
       // Reload embeddings for subsequent tests
@@ -88,7 +89,7 @@ test.describe('RAG vector store (worker-side)', () => {
   test('deduplicates across multi-query matches keeping max score', async () => {
     await clearVectorDB();
     const result = await sharedPage.evaluate(async () => {
-      const { mlWorker } = await import('/src/services/ml-worker.ts');
+      const { mlWorker } = await import('@/services/ml-worker.ts');
 
       await mlWorker.vectorStoreIngest([
         { text: 'Military operations expand in eastern regions', pubDate: Date.now(), source: 'Reuters', url: 'https://example.com/1' },
@@ -109,7 +110,7 @@ test.describe('RAG vector store (worker-side)', () => {
   test('handles empty URL in items', async () => {
     await clearVectorDB();
     const result = await sharedPage.evaluate(async () => {
-      const { mlWorker } = await import('/src/services/ml-worker.ts');
+      const { mlWorker } = await import('@/services/ml-worker.ts');
 
       const stored = await mlWorker.vectorStoreIngest([
         { text: 'Headline without a URL', pubDate: Date.now(), source: 'Test', url: '' },
@@ -126,7 +127,7 @@ test.describe('RAG vector store (worker-side)', () => {
 
   test('worker-unavailable path degrades gracefully', async () => {
     const result = await sharedPage.evaluate(async () => {
-      const mod = await import('/src/services/ml-worker.ts');
+      const mod = await import('@/services/ml-worker.ts');
       const { mlWorker } = mod;
 
       const fresh = Object.create(Object.getPrototypeOf(mlWorker));
@@ -147,7 +148,7 @@ test.describe('RAG vector store (worker-side)', () => {
   test('queue resilience after IDB error', async () => {
     await clearVectorDB();
     const result = await sharedPage.evaluate(async () => {
-      const { mlWorker } = await import('/src/services/ml-worker.ts');
+      const { mlWorker } = await import('@/services/ml-worker.ts');
 
       await mlWorker.vectorStoreIngest([
         { text: 'Valid headline about economic policy', pubDate: Date.now(), source: 'Reuters', url: 'https://example.com/1' },

@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package worldmonitor.aviation.v1;
+
+import "sebuf/http/annotations.proto";
+
+// Represents a single OpenSky flight state vector
+message RadarFlightState {
+  string icao24 = 1;
+  string callsign = 2;
+  string origin_country = 3;
+  
+  // Unix timestamp (seconds)
+  int64 time_position = 4 [(sebuf.http.int64_encoding) = INT64_ENCODING_NUMBER];
+  int64 last_contact = 5 [(sebuf.http.int64_encoding) = INT64_ENCODING_NUMBER];
+  
+  optional float longitude = 6;
+  optional float latitude = 7;
+  optional float baro_altitude = 8;
+  
+  bool on_ground = 9;
+  optional float velocity = 10;
+  optional float true_track = 11;
+  optional float vertical_rate = 12;
+  
+  repeated int32 sensors = 13;
+  optional float geo_altitude = 14;
+  optional string squawk = 15;
+  bool spi = 16;
+  int32 position_source = 17;
+  int32 category = 18;
+}
+
+message GetOpenSkyRadarRequest {
+  optional float lamin = 1;
+  optional float lomin = 2;
+  optional float lamax = 3;
+  optional float lomax = 4;
+}
+
+message GetOpenSkyRadarResponse {
+  int64 time = 1 [(sebuf.http.int64_encoding) = INT64_ENCODING_NUMBER];
+  repeated RadarFlightState states = 2;
+}
