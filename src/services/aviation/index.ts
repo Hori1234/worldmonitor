@@ -164,8 +164,9 @@ export async function fetchFlightDelays(): Promise<AirportDelayAlert[]> {
 
 
 
-export async function fetchRadar(): Promise<FlightState[]> {
+export async function fetchRadar(bounds?: { lamin: number; lomin: number; lamax: number; lomax: number }): Promise<FlightState[]> {
   return radarBreaker.execute(async () => {
+    // const response = await client.getOpenSkyRadar(bounds ?? {});
     const response = await client.getOpenSkyRadar({});
     
     if (!response.states) return [];

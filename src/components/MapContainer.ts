@@ -239,6 +239,11 @@ export class MapContainer {
     return this.svgMap?.getCenter() ?? null;
   }
 
+  public getViewportBounds(): { lamin: number; lomin: number; lamax: number; lomax: number } | null {
+    if (this.useDeckGL) return this.deckGLMap?.getViewportBounds() ?? null;
+    return null;
+  }
+
   public setTimeRange(range: TimeRange): void {
     if (this.useGlobe) { this.globeMap?.setTimeRange(range); return; }
     if (this.useDeckGL) { this.deckGLMap?.setTimeRange(range); } else { this.svgMap?.setTimeRange(range); }
@@ -532,6 +537,10 @@ export class MapContainer {
     } else {
       this.svgMap?.onStateChanged(callback);
     }
+  }
+
+  public setOnViewportRadarRefresh(callback: () => void): void {
+    this.deckGLMap?.setOnViewportRadarRefresh(callback);
   }
 
   public getHotspotLevels(): Record<string, string> {

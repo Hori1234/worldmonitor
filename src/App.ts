@@ -319,6 +319,7 @@ export class App {
       syncDataFreshnessWithLayers: () => this.dataLoader.syncDataFreshnessWithLayers(),
       ensureCorrectZones: () => this.panelLayout.ensureCorrectZones(),
       refreshOpenCountryBrief: () => this.countryIntel.refreshOpenBrief(),
+      loadRadarForViewport: () => { void this.dataLoader.loadRadarMap(); },
     });
 
     // Wire cross-module callback: DataLoader → SearchManager

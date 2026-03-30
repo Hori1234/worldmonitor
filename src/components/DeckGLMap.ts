@@ -349,7 +349,7 @@ export class DeckGLMap {
   private onCountryClick?: (country: CountryClickPayload) => void;
   private onLayerChange?: (layer: keyof MapLayers, enabled: boolean, source: 'user' | 'programmatic') => void;
   private onStateChange?: (state: DeckMapState) => void;
-
+  private onViewportRadarRefresh?: () => void;
   // Highlighted assets
   private highlightedAssets: Record<AssetType, Set<string>> = {
     pipeline: new Set(),
@@ -389,6 +389,8 @@ export class DeckGLMap {
   private lastPipelineHighlightSignature = '';
   private debouncedRebuildLayers: (() => void) & { cancel(): void };
   private debouncedFetchBases: (() => void) & { cancel(): void };
+  // adding the debouncer for the radar data
+  private debouncedFetchRadar: (() => void) & { cancel(): void };
   private rafUpdateLayers: (() => void) & { cancel(): void };
   private moveTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
@@ -402,6 +404,11 @@ export class DeckGLMap {
       this.maplibreMap.resize();
       try { this.deckOverlay?.setProps({ layers: this.buildLayers() }); } catch { /* map mid-teardown */ }
     }, 150);
+
+    this.debouncedFetchRadar = debounce(() => {
+      if (this.state.layers.radar) this.onViewportRadarRefresh?.();
+    }, 2000);
+
     this.debouncedFetchBases = debounce(() => this.fetchServerBases(), 300);
     this.rafUpdateLayers = rafSchedule(() => {
       if (this.renderPaused || this.webglLost || !this.maplibreMap) return;
@@ -562,6 +569,7 @@ export class DeckGLMap {
       this.lastSCZoom = -1;
       this.rafUpdateLayers();
       this.debouncedFetchBases();
+      this.debouncedFetchRadar();  
       this.state.zoom = this.maplibreMap?.getZoom() ?? this.state.zoom;
       this.onStateChange?.(this.state);
     });
@@ -4331,6 +4339,10 @@ export class DeckGLMap {
     this.onStateChange = callback;
   }
 
+  public setOnViewportRadarRefresh(callback: () => void): void {
+    this.onViewportRadarRefresh = callback;
+  }
+
   public getHotspotLevels(): Record<string, string> {
     const levels: Record<string, string> = {};
     this.hotspots.forEach(h => {
@@ -4725,11 +4737,22 @@ export class DeckGLMap {
     } catch { /* layers may not be ready */ }
   }
 
+  public getViewportBounds(): { lamin: number; lomin: number; lamax: number; lomax: number } | null {
+    const bounds = this.maplibreMap?.getBounds();
+    if (!bounds) return null;
+    return {
+      lamin: bounds.getSouth(),
+      lomin: bounds.getWest(),
+      lamax: bounds.getNorth(),
+      lomax: bounds.getEast(),
+    };
+  }
+
   public destroy(): void {
     this.debouncedRebuildLayers.cancel();
     this.debouncedFetchBases.cancel();
     this.rafUpdateLayers.cancel();
-
+    this.debouncedFetchRadar.cancel();
     if (this.moveTimeoutId) {
       clearTimeout(this.moveTimeoutId);
       this.moveTimeoutId = null;

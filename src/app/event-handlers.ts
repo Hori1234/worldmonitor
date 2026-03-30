@@ -53,6 +53,7 @@ import { TvModeController } from '@/services/tv-mode';
 
 export interface EventHandlerCallbacks {
   updateSearchIndex: () => void;
+  loadRadarForViewport?: () => void;
   loadAllData: () => Promise<void>;
   flushStaleRefreshes: () => void;
   setHiddenSince: (ts: number) => void;
@@ -310,9 +311,12 @@ export class EventHandlerManager implements AppModule {
       this.boundFullscreenHandler = () => {
         fullscreenBtn.textContent = document.fullscreenElement ? '\u26F6' : '\u26F6';
         fullscreenBtn.classList.toggle('active', !!document.fullscreenElement);
+        
       };
       document.addEventListener('fullscreenchange', this.boundFullscreenHandler);
     }
+
+    
 
     const regionSelect = document.getElementById('regionSelect') as HTMLSelectElement;
     regionSelect?.addEventListener('change', () => {
@@ -923,8 +927,14 @@ export class EventHandlerManager implements AppModule {
       if (enabled) {
         this.callbacks.loadDataForLayer(layer);
       }
+      
+    });
+    
+    this.ctx.map?.setOnViewportRadarRefresh(() => {
+      this.callbacks.loadRadarForViewport?.();
     });
   }
+  
 
   setupPanelViewTracking(): void {
     const viewedPanels = new Set<string>();

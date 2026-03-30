@@ -162,6 +162,7 @@ const CYBER_LAYER_ENABLED = import.meta.env.VITE_ENABLE_CYBER_LAYER === 'true';
 export interface DataLoaderCallbacks {
   renderCriticalBanner: (postures: TheaterPostureSummary[]) => void;
   refreshOpenCountryBrief: () => void;
+  // loadRadarForViewport: () => { void this.dataLoader.loadRadarMap(); }
 }
 
 export class DataLoaderManager implements AppModule {
@@ -435,6 +436,9 @@ export class DataLoaderManager implements AppModule {
           break;
         case 'positiveEvents':
           await this.loadPositiveEvents();
+          break;
+        case 'radar':
+          await this.loadRadarMap();
           break;
         case 'kindness':
           this.loadKindnessData();
@@ -1750,7 +1754,13 @@ export class DataLoaderManager implements AppModule {
 
   async loadRadarMap(): Promise<void> {
       try {
-        const flights = await fetchRadar();
+        // const flights = await fetchRadar();
+
+        const center = this.ctx.map?.getCenter();
+        // Get bounds from DeckGLMap's maplibreMap
+        const bounds = this.ctx.map?.getViewportBounds?.(); 
+        console.log('[Radar] Fetching radar data for bounds:', bounds, 'center:', center);
+        const flights = await fetchRadar(bounds ?? undefined);
         
         // Pass data through central API to your map objects defined above
         this.ctx.map?.setRadarData(flights);
