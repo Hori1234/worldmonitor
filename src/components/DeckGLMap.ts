@@ -1670,9 +1670,27 @@ export class DeckGLMap {
       radiusMaxPixels: 10,
       pickable: true,
       onClick: (info) => {
-        // Optional placeholder for when users click an airplane
-        if (info.object) {
-          console.log(`Radar Clicked: ${info.object.callsign}`);
+        if (info.object && this.popup) {
+          const flight = info.object;
+          
+          this.popup.show({
+            type: 'radar',
+            data: {
+              id: flight.icao24 || flight.callsign || 'unknown',
+              name: flight.callsign ? `Flight ${flight.callsign}` : 'Unknown Aircraft',
+              description: `Target Details — Velocity: ${Math.round(flight.velocity || 0)} m/s, Barometric Altitude: ${Math.round(flight.baroAltitude || 0)}m${flight.onGround ? ' (Grounded)' : ''}`,
+              location: `Lat: ${flight.latitude?.toFixed(4)}, Lon: ${flight.longitude?.toFixed(4)}`,
+              lat: flight.latitude || 0,
+              lng: flight.longitude || 0,
+              country: flight.originCountry || 'Unknown Origin',
+              startDate: flight.timePosition ? new Date(flight.timePosition).toLocaleString() : 'N/A',
+              endDate: 'Active Tracking',
+              url: `https://globe.adsbexchange.com/?icao=${flight.icao24}`, // Adding ADSB web URL if they want to see it live
+              daysUntil: 0
+            },
+            x: info.x,
+            y: info.y
+          });
         }
       }
     });
@@ -3041,6 +3059,10 @@ export class DeckGLMap {
       }
       return;
     }
+
+    // *** ADD THIS: Hide the deck.gl hover tooltip so it doesn't linger behind the popup ***
+    const tooltipEl = this.container.querySelector('.deck-tooltip, [class*="deck-tooltip"]') as HTMLElement | null;
+    if (tooltipEl) tooltipEl.style.display = 'none';
 
     const rawClickLayerId = info.layer?.id || '';
     const layerId = rawClickLayerId.endsWith('-ghost') ? rawClickLayerId.slice(0, -6) : rawClickLayerId;

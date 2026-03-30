@@ -5951,7 +5951,17 @@ a.prediction-link:hover {
   z-index: 1000;
   overflow-y: auto;
   box-shadow: 0 4px 24px rgba(255, 68, 68, 0.3);
+
+  /* Force compositing isolation from WebGL canvas to prevent paint artifacts */
+  will-change: transform;
+  contain: layout style paint;
+  backface-visibility: hidden;
 }
+
+/* body:has(.map-popup) .deck-tooltip,
+body:has(.map-popup) [class*="deck-tooltip"] {
+  display: none !important;
+} */
 
 .map-popup.map-popup-sheet {
   left: 12px !important;

@@ -237,6 +237,115 @@ export class MapPopup {
     }, 0);
   }
 
+  // public show(data: PopupData): void {
+  //   this.hide();
+
+  //   this.isMobileSheet = isMobileDevice();
+  //   this.popup = document.createElement('div');
+  //   this.popup.className = this.isMobileSheet ? 'map-popup map-popup-sheet' : 'map-popup';
+
+  //   const content = this.renderContent(data);
+  //   this.popup.innerHTML = this.isMobileSheet
+  //     ? `<button class="map-popup-sheet-handle" aria-label="${t('common.close')}"></button>${content}`
+  //     : content;
+
+  //   const containerRect = this.container.getBoundingClientRect();
+
+  //   if (this.isMobileSheet) {
+  //     this.popup.style.left = '';
+  //     this.popup.style.top = '';
+  //     this.popup.style.transform = '';
+  //     document.body.appendChild(this.popup);
+  //   } else {
+  //     // Append ONCE, invisible via opacity so nothing paints (no box-shadow, no border, nothing).
+  //     // opacity:0 also promotes the element to its own compositor layer, preventing
+  //     // WebGL canvas smear-through on Windows hardware-accelerated compositing.
+  //     this.popup.style.opacity = '0';
+  //     this.popup.style.pointerEvents = 'none';
+  //     document.body.appendChild(this.popup);
+
+  //     // Measure and position while invisible (element is in DOM, offsetHeight works)
+  //     this.positionDesktopPopup(data, containerRect);
+
+  //     // Reveal in a single style recalc
+  //     this.popup.style.opacity = '';
+  //     this.popup.style.pointerEvents = '';
+  //   }
+
+  //   // Close button handler
+  //   this.popup.querySelector('.popup-close')?.addEventListener('click', () => this.hide());
+  //   this.popup.querySelector('.map-popup-sheet-handle')?.addEventListener('click', () => this.hide());
+
+  //   if (this.isMobileSheet) {
+  //     this.popup.addEventListener('touchstart', this.handleSheetTouchStart, { passive: true });
+  //     this.popup.addEventListener('touchmove', this.handleSheetTouchMove, { passive: false });
+  //     this.popup.addEventListener('touchend', this.handleSheetTouchEnd);
+  //     this.popup.addEventListener('touchcancel', this.handleSheetTouchEnd);
+  //     requestAnimationFrame(() => {
+  //       if (!this.popup) return;
+  //       this.popup.classList.add('open');
+  //       this.popup.addEventListener('transitionend', () => {
+  //         if (this.popup) this.popup.style.willChange = 'auto';
+  //       }, { once: true });
+  //     });
+  //   }
+
+  //   // Click outside to close
+  //   if (this.outsideListenerTimeoutId !== null) {
+  //     window.clearTimeout(this.outsideListenerTimeoutId);
+  //   }
+  //   this.outsideListenerTimeoutId = window.setTimeout(() => {
+  //     document.addEventListener('click', this.handleOutsideClick);
+  //     document.addEventListener('touchstart', this.handleOutsideClick);
+  //     document.addEventListener('keydown', this.handleEscapeKey);
+  //     this.outsideListenerTimeoutId = null;
+  //   }, 0);
+  // }
+
+  // private positionDesktopPopup(data: PopupData, containerRect: DOMRect): void {
+  //   if (!this.popup) return;
+
+  //   const popupWidth = 380;
+  //   const bottomBuffer = 50;
+  //   const topBuffer = 60;
+
+  //   // Element is already in the DOM (opacity:0), just measure its natural height
+  //   const popupHeight = this.popup.offsetHeight;
+
+  //   // Convert container-relative coords to viewport coords
+  //   const viewportX = containerRect.left + data.x;
+  //   const viewportY = containerRect.top + data.y;
+
+  //   // Horizontal positioning (viewport-relative)
+  //   const maxX = window.innerWidth - popupWidth - 20;
+  //   let left = viewportX + 20;
+  //   if (left > maxX) {
+  //     left = Math.max(10, viewportX - popupWidth - 20);
+  //   }
+
+  //   // Vertical positioning - prefer below click, but flip above if needed
+  //   const availableBelow = window.innerHeight - viewportY - bottomBuffer;
+  //   const availableAbove = viewportY - topBuffer;
+
+  //   let top: number;
+  //   if (availableBelow >= popupHeight) {
+  //     top = viewportY + 10;
+  //   } else if (availableAbove >= popupHeight) {
+  //     top = viewportY - popupHeight - 10;
+  //   } else {
+  //     top = topBuffer;
+  //   }
+
+  //   top = Math.max(topBuffer, top);
+  //   const maxTop = window.innerHeight - popupHeight - bottomBuffer;
+  //   if (maxTop > topBuffer) {
+  //     top = Math.min(top, maxTop);
+  //   }
+
+  //   this.popup.style.left = `${left}px`;
+  //   this.popup.style.top = `${top}px`;
+  // }
+
   private positionDesktopPopup(data: PopupData, containerRect: DOMRect): void {
     if (!this.popup) return;
 
@@ -260,6 +369,8 @@ export class MapPopup {
     // Horizontal positioning (viewport-relative)
     const maxX = window.innerWidth - popupWidth - 20;
     let left = viewportX + 20;
+
+
     if (left > maxX) {
       // Position to the left of click if it would overflow right
       left = Math.max(10, viewportX - popupWidth - 20);
@@ -1177,37 +1288,7 @@ export class MapPopup {
     `;
   }
 
-  private renderRadarPopup(radar: RadarPopupData): string {
-    return `
-      <div class="popup-header radar">
-        <span class="popup-title">${escapeHtml(radar.name)}</span>
-        <span class="popup-badge high">${t('popups.radar')}</span>
-        <button class="popup-close" aria-label="Close">×</button>
-      </div>
-      <div class="popup-body">
-        <div class="popup-subtitle">${escapeHtml(radar.description || '')}</div>
-        <div class="popup-location">${escapeHtml(radar.location)}</div>
-        <div class="popup-stats">
-          <div class="popup-stat">
-            <span class="stat-label">${t('popups.startDate')}</span>
-            <span class="stat-value">${escapeHtml(radar.startDate)}</span>
-          </div>
-          <div class="popup-stat">
-            <span class="stat-label">${t('popups.endDate')}</span>
-            <span class="stat-value">${escapeHtml(radar.endDate)}</span>
-          </div>
-          <div class="popup-stat">
-            <span class="stat-label">${t('popups.daysUntil')}</span>
-            <span class="stat-value">${escapeHtml(radar.daysUntil.toString())}</span>
-          </div>
-          <div class="popup-stat">
-            <span class="stat-label">${t('popups.url')}</span>
-            <span class="stat-value">${radar.url ? `<a href="${escapeHtml(radar.url)}" target="_blank">${escapeHtml(radar.url)}</a>` : t('popups.unknown')}</span>
-          </div>
-        </div>
-      </div>
-    `;
-  }
+  
 
   private renderAPTPopup(apt: APTGroup): string {
     return `
@@ -2766,6 +2847,38 @@ export class MapPopup {
           <div class="popup-stat">
             <span class="stat-label">${t('popups.gpsJamming.h3Hex')}</span>
             <span class="stat-value" style="font-size:10px">${escapeHtml(data.h3)}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  private renderRadarPopup(radar: RadarPopupData): string {
+    return `
+      <div class="popup-header radar">
+        <span class="popup-title">${escapeHtml(radar.name)}</span>
+        <span class="popup-badge high">${t('popups.radar')}</span>
+        <button class="popup-close" aria-label="Close">×</button>
+      </div>
+      <div class="popup-body">
+        <div class="popup-subtitle">${escapeHtml(radar.description || '')}</div>
+        <div class="popup-location">${escapeHtml(radar.location)}</div>
+        <div class="popup-stats">
+          <div class="popup-stat">
+            <span class="stat-label">${t('popups.startDate')}</span>
+            <span class="stat-value">${escapeHtml(radar.startDate)}</span>
+          </div>
+          <div class="popup-stat">
+            <span class="stat-label">${t('popups.endDate')}</span>
+            <span class="stat-value">${escapeHtml(radar.endDate)}</span>
+          </div>
+          <div class="popup-stat">
+            <span class="stat-label">${t('popups.daysUntil')}</span>
+            <span class="stat-value">${escapeHtml(radar.daysUntil.toString())}</span>
+          </div>
+          <div class="popup-stat">
+            <span class="stat-label">${t('popups.url')}</span>
+            <span class="stat-value">${radar.url ? `<a href="${escapeHtml(radar.url)}" target="_blank">${escapeHtml(radar.url)}</a>` : t('popups.unknown')}</span>
           </div>
         </div>
       </div>

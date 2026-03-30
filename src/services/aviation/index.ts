@@ -145,8 +145,8 @@ const breaker = createCircuitBreaker<AirportDelayAlert[]>({ name: 'Flight Delays
 // Note: Circuit breaker typing must match the eventual output mapping to `FlightState`
 const radarBreaker = createCircuitBreaker<FlightState[]>({ 
   name: 'OpenSky Radar', 
-  cacheTtlMs: 30 * 1000,   // Cache for 30s instead of 2 hours, as radar objects move fast
-  persistCache: false 
+  cacheTtlMs: 10 * 30 * 1000,   //  10 minutes — OpenSky free tier allows ~400/day ≈ 1 per 3.6 min
+  persistCache: true 
 });
 // --- Main fetch (public API) ---
 
