@@ -4,6 +4,7 @@ import {
   type AirportDelayAlert as ProtoAlert,
 } from '@/generated/client/worldmonitor/aviation/v1/service_client';
 import { createCircuitBreaker } from '@/utils';
+import { getRadarStatesWithMetadata } from '@/db/api';
 
 // --- Consumer-friendly types (matching legacy shape exactly) ---
 
@@ -112,6 +113,29 @@ function toDisplayAlert(proto: ProtoAlert): AirportDelayAlert {
 }
 
 
+// --- Client + circuit breaker ---
+
+const client = new AviationServiceClient('', { fetch: (...args) => globalThis.fetch(...args) });
+const breaker = createCircuitBreaker<AirportDelayAlert[]>({ name: 'Flight Delays v2', cacheTtlMs: 2 * 60 * 60 * 1000, persistCache: true });
+
+
+// --- Main fetch (public API) ---
+
+export async function fetchFlightDelays(): Promise<AirportDelayAlert[]> {
+  return breaker.execute(async () => {
+    const response = await client.listAirportDelays({
+      region: 'AIRPORT_REGION_UNSPECIFIED',
+      minSeverity: 'FLIGHT_DELAY_SEVERITY_UNSPECIFIED',
+      pageSize: 0,
+      cursor: '',
+    });
+    return response.alerts.map(toDisplayAlert);
+  }, []);
+}
+
+
+// --- Additional radar fetch (public API) ---
+
 function toDisplayFlightState(proto: ProtoRadarFlightState) {
   return {
     icao24: proto.icao24,
@@ -135,34 +159,12 @@ function toDisplayFlightState(proto: ProtoRadarFlightState) {
   };
 }
 
-
-
-// --- Client + circuit breaker ---
-
-const client = new AviationServiceClient('', { fetch: (...args) => globalThis.fetch(...args) });
-const breaker = createCircuitBreaker<AirportDelayAlert[]>({ name: 'Flight Delays v2', cacheTtlMs: 2 * 60 * 60 * 1000, persistCache: true });
-
 // Note: Circuit breaker typing must match the eventual output mapping to `FlightState`
 const radarBreaker = createCircuitBreaker<FlightState[]>({ 
   name: 'OpenSky Radar', 
   cacheTtlMs: 10 * 30 * 1000,   //  10 minutes — OpenSky free tier allows ~400/day ≈ 1 per 3.6 min
   persistCache: true 
 });
-// --- Main fetch (public API) ---
-
-export async function fetchFlightDelays(): Promise<AirportDelayAlert[]> {
-  return breaker.execute(async () => {
-    const response = await client.listAirportDelays({
-      region: 'AIRPORT_REGION_UNSPECIFIED',
-      minSeverity: 'FLIGHT_DELAY_SEVERITY_UNSPECIFIED',
-      pageSize: 0,
-      cursor: '',
-    });
-    return response.alerts.map(toDisplayAlert);
-  }, []);
-}
-
-
 
 export async function fetchRadar(bounds?: { lamin: number; lomin: number; lamax: number; lomax: number }): Promise<FlightState[]> {
   return radarBreaker.execute(async () => {
@@ -172,4 +174,37 @@ export async function fetchRadar(bounds?: { lamin: number; lomin: number; lamax:
     if (!response.states) return [];
     return response.states.map(toDisplayFlightState);
   }, []);
+}
+
+type DbRadarRow = Awaited<ReturnType<typeof getRadarStatesWithMetadata>>[number];
+
+function dbRowToFlightState(row: DbRadarRow): FlightState {
+  return {
+    icao24: row.icao24,
+    callsign: row.callsign ?? '',
+    originCountry: row.originCountry ?? '',
+    timePosition: row.timePosition ? new Date(row.timePosition * 1000) : undefined,
+    lastContact: row.lastContact ? new Date(row.lastContact * 1000) : undefined,
+    longitude: row.longitude ?? undefined,
+    latitude: row.latitude ?? undefined,
+    baroAltitude: row.baroAltitude ?? undefined,
+    onGround: row.onGround,
+    velocity: row.velocity ?? undefined,
+    trueTrack: row.trueTrack ?? undefined,
+    verticalRate: row.verticalRate ?? undefined,
+    sensors: row.sensors ?? [],
+    geoAltitude: row.geoAltitude ?? undefined,
+    squawk: row.squawk ?? undefined,
+    spi: row.spi,
+    positionSource: row.positionSource,
+    category: row.category,
+  };
+}
+
+export async function fetchRadarFromDb(
+  bounds?: { lamin: number; lomin: number; lamax: number; lomax: number },
+  limit: number = 100
+): Promise<FlightState[]> {
+  const rows = await getRadarStatesWithMetadata(bounds, limit);
+  return rows.map(dbRowToFlightState);
 }
