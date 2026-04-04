@@ -199,7 +199,7 @@ function dbRowToFlightState(row: DbRadarRow): FlightState {
     positionSource: row.positionSource,
     category: row.category,
   };
-}
+} 
 
 export async function fetchRadarFromDb(
   bounds?: { lamin: number; lomin: number; lamax: number; lomax: number },
