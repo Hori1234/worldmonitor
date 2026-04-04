@@ -1212,12 +1212,22 @@ export class DeckGLMap {
       layers.push(this.createFlightDelaysLayer(filteredFlightDelays));
     }
 
-    // Radar layer (OpenSky live aircraft)
     if (mapLayers.radar && this.radarData.length > 0) {
-        // Filter by time if you want them to respect the history slider, 
-        // Otherwise just pass this.radarData directly!
-        if (filteredRadar.length > 0) {
-          layers.push(this.createRadarLayer(filteredRadar));
+        let visibleRadar = this.filterByTime(this.radarData, (f) => f.timePosition || new Date());
+        const bounds = this.maplibreMap?.getBounds();
+        if (bounds) {
+          const south = bounds.getSouth();
+          const north = bounds.getNorth();
+          const west = bounds.getWest();
+          const east = bounds.getEast();
+          visibleRadar = visibleRadar.filter(f =>
+            f.latitude != null && f.longitude != null &&
+            f.latitude >= south && f.latitude <= north &&
+            f.longitude >= west && f.longitude <= east
+          );
+        }
+        if (visibleRadar.length > 0) {
+          layers.push(this.createRadarLayer(visibleRadar));
         }
     }
 
