@@ -1,8 +1,8 @@
 .country-deep-dive {
   position: fixed;
   top: 0;
-  right: -460px;
-  width: 430px;
+  right: -40vw;
+  width: 40vw;
   height: 100vh;
   z-index: 5000;
   border-left: 1px solid var(--border);
