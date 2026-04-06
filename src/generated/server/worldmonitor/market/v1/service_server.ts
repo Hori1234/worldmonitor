@@ -165,6 +165,141 @@ export interface GulfQuote {
   sparkline: number[];
 }
 
+export interface GetYahooQuoteRequest {
+  symbol: string;
+}
+
+export interface GetYahooQuoteResponse {
+  quote?: YahooQuoteDetail;
+}
+
+export interface YahooQuoteDetail {
+  symbol: string;
+  name: string;
+  exchange: string;
+  currency: string;
+  price: number;
+  previousClose: number;
+  open: number;
+  dayHigh: number;
+  dayLow: number;
+  fiftyTwoWeekHigh: number;
+  fiftyTwoWeekLow: number;
+  volume: number;
+  avgVolume: number;
+  marketCap: number;
+  peRatio: number;
+  eps: number;
+  dividendYield: number;
+  changePercent: number;
+  fetchedAt: number;
+}
+
+export interface GetYahooHistoryRequest {
+  symbol: string;
+  range: string;
+  interval: string;
+}
+
+export interface GetYahooHistoryResponse {
+  symbol: string;
+  candles: YahooHistoryCandle[];
+}
+
+export interface YahooHistoryCandle {
+  date: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+  adjClose: number;
+}
+
+export interface SearchYahooSymbolsRequest {
+  query: string;
+}
+
+export interface SearchYahooSymbolsResponse {
+  results: YahooSearchResult[];
+}
+
+export interface YahooSearchResult {
+  symbol: string;
+  name: string;
+  exchange: string;
+  type: string;
+}
+
+export interface ListYahooTrendingRequest {
+  count: number;
+}
+
+export interface ListYahooTrendingResponse {
+  symbols: YahooTrendingSymbol[];
+}
+
+export interface YahooTrendingSymbol {
+  symbol: string;
+  name: string;
+  price: number;
+  changePercent: number;
+  volume: number;
+}
+
+export interface GetYahooOptionsRequest {
+  symbol: string;
+  expiration: string;
+}
+
+export interface GetYahooOptionsResponse {
+  symbol: string;
+  expirations: string[];
+  calls: YahooOptionContract[];
+  puts: YahooOptionContract[];
+}
+
+export interface YahooOptionContract {
+  contractSymbol: string;
+  strike: number;
+  lastPrice: number;
+  bid: number;
+  ask: number;
+  volume: number;
+  openInterest: number;
+  impliedVolatility: number;
+  expiration: number;
+  type: string;
+}
+
+export interface GetYahooProfileRequest {
+  symbol: string;
+}
+
+export interface GetYahooProfileResponse {
+  profile?: YahooProfile;
+}
+
+export interface YahooProfile {
+  symbol: string;
+  name: string;
+  sector: string;
+  industry: string;
+  country: string;
+  website: string;
+  description: string;
+  fullTimeEmployees: number;
+  marketCap: number;
+  peRatio: number;
+  forwardPe: number;
+  dividendYield: number;
+  fiftyTwoWeekHigh: number;
+  fiftyTwoWeekLow: number;
+  beta: number;
+  revenue: number;
+  profitMargin: number;
+}
+
 export interface FieldViolation {
   field: string;
   description: string;
@@ -218,6 +353,12 @@ export interface MarketServiceHandler {
   listEtfFlows(ctx: ServerContext, req: ListEtfFlowsRequest): Promise<ListEtfFlowsResponse>;
   getCountryStockIndex(ctx: ServerContext, req: GetCountryStockIndexRequest): Promise<GetCountryStockIndexResponse>;
   listGulfQuotes(ctx: ServerContext, req: ListGulfQuotesRequest): Promise<ListGulfQuotesResponse>;
+  getYahooQuote(ctx: ServerContext, req: GetYahooQuoteRequest): Promise<GetYahooQuoteResponse>;
+  getYahooHistory(ctx: ServerContext, req: GetYahooHistoryRequest): Promise<GetYahooHistoryResponse>;
+  searchYahooSymbols(ctx: ServerContext, req: SearchYahooSymbolsRequest): Promise<SearchYahooSymbolsResponse>;
+  listYahooTrending(ctx: ServerContext, req: ListYahooTrendingRequest): Promise<ListYahooTrendingResponse>;
+  getYahooOptions(ctx: ServerContext, req: GetYahooOptionsRequest): Promise<GetYahooOptionsResponse>;
+  getYahooProfile(ctx: ServerContext, req: GetYahooProfileRequest): Promise<GetYahooProfileResponse>;
 }
 
 export function createMarketServiceRoutes(
@@ -560,6 +701,291 @@ export function createMarketServiceRoutes(
 
           const result = await handler.listGulfQuotes(ctx, body);
           return new Response(JSON.stringify(result as ListGulfQuotesResponse), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        } catch (err: unknown) {
+          if (err instanceof ValidationError) {
+            return new Response(JSON.stringify({ violations: err.violations }), {
+              status: 400,
+              headers: { "Content-Type": "application/json" },
+            });
+          }
+          if (options?.onError) {
+            return options.onError(err, req);
+          }
+          const message = err instanceof Error ? err.message : String(err);
+          return new Response(JSON.stringify({ message }), {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+      },
+    },
+    {
+      method: "GET",
+      path: "/api/market/v1/get-yahoo-quote",
+      handler: async (req: Request): Promise<Response> => {
+        try {
+          const pathParams: Record<string, string> = {};
+          const url = new URL(req.url, "http://localhost");
+          const params = url.searchParams;
+          const body: GetYahooQuoteRequest = {
+            symbol: params.get("symbol") ?? "",
+          };
+          if (options?.validateRequest) {
+            const bodyViolations = options.validateRequest("getYahooQuote", body);
+            if (bodyViolations) {
+              throw new ValidationError(bodyViolations);
+            }
+          }
+
+          const ctx: ServerContext = {
+            request: req,
+            pathParams,
+            headers: Object.fromEntries(req.headers.entries()),
+          };
+
+          const result = await handler.getYahooQuote(ctx, body);
+          return new Response(JSON.stringify(result as GetYahooQuoteResponse), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        } catch (err: unknown) {
+          if (err instanceof ValidationError) {
+            return new Response(JSON.stringify({ violations: err.violations }), {
+              status: 400,
+              headers: { "Content-Type": "application/json" },
+            });
+          }
+          if (options?.onError) {
+            return options.onError(err, req);
+          }
+          const message = err instanceof Error ? err.message : String(err);
+          return new Response(JSON.stringify({ message }), {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+      },
+    },
+    {
+      method: "GET",
+      path: "/api/market/v1/get-yahoo-history",
+      handler: async (req: Request): Promise<Response> => {
+        try {
+          const pathParams: Record<string, string> = {};
+          const url = new URL(req.url, "http://localhost");
+          const params = url.searchParams;
+          const body: GetYahooHistoryRequest = {
+            symbol: params.get("symbol") ?? "",
+            range: params.get("range") ?? "",
+            interval: params.get("interval") ?? "",
+          };
+          if (options?.validateRequest) {
+            const bodyViolations = options.validateRequest("getYahooHistory", body);
+            if (bodyViolations) {
+              throw new ValidationError(bodyViolations);
+            }
+          }
+
+          const ctx: ServerContext = {
+            request: req,
+            pathParams,
+            headers: Object.fromEntries(req.headers.entries()),
+          };
+
+          const result = await handler.getYahooHistory(ctx, body);
+          return new Response(JSON.stringify(result as GetYahooHistoryResponse), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        } catch (err: unknown) {
+          if (err instanceof ValidationError) {
+            return new Response(JSON.stringify({ violations: err.violations }), {
+              status: 400,
+              headers: { "Content-Type": "application/json" },
+            });
+          }
+          if (options?.onError) {
+            return options.onError(err, req);
+          }
+          const message = err instanceof Error ? err.message : String(err);
+          return new Response(JSON.stringify({ message }), {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+      },
+    },
+    {
+      method: "GET",
+      path: "/api/market/v1/search-yahoo-symbols",
+      handler: async (req: Request): Promise<Response> => {
+        try {
+          const pathParams: Record<string, string> = {};
+          const url = new URL(req.url, "http://localhost");
+          const params = url.searchParams;
+          const body: SearchYahooSymbolsRequest = {
+            query: params.get("query") ?? "",
+          };
+          if (options?.validateRequest) {
+            const bodyViolations = options.validateRequest("searchYahooSymbols", body);
+            if (bodyViolations) {
+              throw new ValidationError(bodyViolations);
+            }
+          }
+
+          const ctx: ServerContext = {
+            request: req,
+            pathParams,
+            headers: Object.fromEntries(req.headers.entries()),
+          };
+
+          const result = await handler.searchYahooSymbols(ctx, body);
+          return new Response(JSON.stringify(result as SearchYahooSymbolsResponse), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        } catch (err: unknown) {
+          if (err instanceof ValidationError) {
+            return new Response(JSON.stringify({ violations: err.violations }), {
+              status: 400,
+              headers: { "Content-Type": "application/json" },
+            });
+          }
+          if (options?.onError) {
+            return options.onError(err, req);
+          }
+          const message = err instanceof Error ? err.message : String(err);
+          return new Response(JSON.stringify({ message }), {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+      },
+    },
+    {
+      method: "GET",
+      path: "/api/market/v1/list-yahoo-trending",
+      handler: async (req: Request): Promise<Response> => {
+        try {
+          const pathParams: Record<string, string> = {};
+          const url = new URL(req.url, "http://localhost");
+          const params = url.searchParams;
+          const body: ListYahooTrendingRequest = {
+            count: Number(params.get("count") ?? "0"),
+          };
+          if (options?.validateRequest) {
+            const bodyViolations = options.validateRequest("listYahooTrending", body);
+            if (bodyViolations) {
+              throw new ValidationError(bodyViolations);
+            }
+          }
+
+          const ctx: ServerContext = {
+            request: req,
+            pathParams,
+            headers: Object.fromEntries(req.headers.entries()),
+          };
+
+          const result = await handler.listYahooTrending(ctx, body);
+          return new Response(JSON.stringify(result as ListYahooTrendingResponse), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        } catch (err: unknown) {
+          if (err instanceof ValidationError) {
+            return new Response(JSON.stringify({ violations: err.violations }), {
+              status: 400,
+              headers: { "Content-Type": "application/json" },
+            });
+          }
+          if (options?.onError) {
+            return options.onError(err, req);
+          }
+          const message = err instanceof Error ? err.message : String(err);
+          return new Response(JSON.stringify({ message }), {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+      },
+    },
+    {
+      method: "GET",
+      path: "/api/market/v1/get-yahoo-options",
+      handler: async (req: Request): Promise<Response> => {
+        try {
+          const pathParams: Record<string, string> = {};
+          const url = new URL(req.url, "http://localhost");
+          const params = url.searchParams;
+          const body: GetYahooOptionsRequest = {
+            symbol: params.get("symbol") ?? "",
+            expiration: params.get("expiration") ?? "",
+          };
+          if (options?.validateRequest) {
+            const bodyViolations = options.validateRequest("getYahooOptions", body);
+            if (bodyViolations) {
+              throw new ValidationError(bodyViolations);
+            }
+          }
+
+          const ctx: ServerContext = {
+            request: req,
+            pathParams,
+            headers: Object.fromEntries(req.headers.entries()),
+          };
+
+          const result = await handler.getYahooOptions(ctx, body);
+          return new Response(JSON.stringify(result as GetYahooOptionsResponse), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        } catch (err: unknown) {
+          if (err instanceof ValidationError) {
+            return new Response(JSON.stringify({ violations: err.violations }), {
+              status: 400,
+              headers: { "Content-Type": "application/json" },
+            });
+          }
+          if (options?.onError) {
+            return options.onError(err, req);
+          }
+          const message = err instanceof Error ? err.message : String(err);
+          return new Response(JSON.stringify({ message }), {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+      },
+    },
+    {
+      method: "GET",
+      path: "/api/market/v1/get-yahoo-profile",
+      handler: async (req: Request): Promise<Response> => {
+        try {
+          const pathParams: Record<string, string> = {};
+          const url = new URL(req.url, "http://localhost");
+          const params = url.searchParams;
+          const body: GetYahooProfileRequest = {
+            symbol: params.get("symbol") ?? "",
+          };
+          if (options?.validateRequest) {
+            const bodyViolations = options.validateRequest("getYahooProfile", body);
+            if (bodyViolations) {
+              throw new ValidationError(bodyViolations);
+            }
+          }
+
+          const ctx: ServerContext = {
+            request: req,
+            pathParams,
+            headers: Object.fromEntries(req.headers.entries()),
+          };
+
+          const result = await handler.getYahooProfile(ctx, body);
+          return new Response(JSON.stringify(result as GetYahooProfileResponse), {
             status: 200,
             headers: { "Content-Type": "application/json" },
           });

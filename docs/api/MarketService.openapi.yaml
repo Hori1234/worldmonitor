@@ -253,6 +253,218 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Error'
+    /api/market/v1/get-yahoo-quote:
+        get:
+            tags:
+                - MarketService
+            summary: GetYahooQuote
+            description: "YAHOO FINANCE RPCs\r\n GetYahooQuote retrieves a detailed quote for a single symbol via yahoo-finance2."
+            operationId: GetYahooQuote
+            parameters:
+                - name: symbol
+                  in: query
+                  required: false
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: Successful response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetYahooQuoteResponse'
+                "400":
+                    description: Validation error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ValidationError'
+                default:
+                    description: Error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+    /api/market/v1/get-yahoo-history:
+        get:
+            tags:
+                - MarketService
+            summary: GetYahooHistory
+            description: GetYahooHistory retrieves OHLCV historical candle data for a symbol.
+            operationId: GetYahooHistory
+            parameters:
+                - name: symbol
+                  in: query
+                  required: false
+                  schema:
+                    type: string
+                - name: range
+                  in: query
+                  description: '"1d", "5d", "1mo", "3mo", "6mo", "1y", "5y", "max"'
+                  required: false
+                  schema:
+                    type: string
+                - name: interval
+                  in: query
+                  description: '"1d", "1wk", "1mo"'
+                  required: false
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: Successful response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetYahooHistoryResponse'
+                "400":
+                    description: Validation error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ValidationError'
+                default:
+                    description: Error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+    /api/market/v1/search-yahoo-symbols:
+        get:
+            tags:
+                - MarketService
+            summary: SearchYahooSymbols
+            description: SearchYahooSymbols searches for tickers by keyword.
+            operationId: SearchYahooSymbols
+            parameters:
+                - name: query
+                  in: query
+                  required: false
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: Successful response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SearchYahooSymbolsResponse'
+                "400":
+                    description: Validation error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ValidationError'
+                default:
+                    description: Error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+    /api/market/v1/list-yahoo-trending:
+        get:
+            tags:
+                - MarketService
+            summary: ListYahooTrending
+            description: ListYahooTrending retrieves currently trending symbols on Yahoo Finance.
+            operationId: ListYahooTrending
+            parameters:
+                - name: count
+                  in: query
+                  description: Number of trending symbols to return (default 10, max 50).
+                  required: false
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: Successful response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListYahooTrendingResponse'
+                "400":
+                    description: Validation error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ValidationError'
+                default:
+                    description: Error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+    /api/market/v1/get-yahoo-options:
+        get:
+            tags:
+                - MarketService
+            summary: GetYahooOptions
+            description: GetYahooOptions retrieves the options chain (calls + puts) for a symbol.
+            operationId: GetYahooOptions
+            parameters:
+                - name: symbol
+                  in: query
+                  required: false
+                  schema:
+                    type: string
+                - name: expiration
+                  in: query
+                  description: Optional expiration date filter (ISO or epoch). Empty returns nearest expiry.
+                  required: false
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: Successful response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetYahooOptionsResponse'
+                "400":
+                    description: Validation error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ValidationError'
+                default:
+                    description: Error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+    /api/market/v1/get-yahoo-profile:
+        get:
+            tags:
+                - MarketService
+            summary: GetYahooProfile
+            description: GetYahooProfile retrieves the company profile and key statistics for a symbol.
+            operationId: GetYahooProfile
+            parameters:
+                - name: symbol
+                  in: query
+                  required: false
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: Successful response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetYahooProfileResponse'
+                "400":
+                    description: Validation error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ValidationError'
+                default:
+                    description: Error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
 components:
     schemas:
         Error:
@@ -721,3 +933,320 @@ components:
                         type: number
                         format: double
             description: GulfQuote represents a Gulf region market quote (index, currency, or oil).
+        GetYahooQuoteRequest:
+            type: object
+            properties:
+                symbol:
+                    type: string
+                    maxLength: 20
+                    minLength: 1
+            required:
+                - symbol
+        GetYahooQuoteResponse:
+            type: object
+            properties:
+                quote:
+                    $ref: '#/components/schemas/YahooQuoteDetail'
+        YahooQuoteDetail:
+            type: object
+            properties:
+                symbol:
+                    type: string
+                    minLength: 1
+                name:
+                    type: string
+                exchange:
+                    type: string
+                currency:
+                    type: string
+                price:
+                    type: number
+                    format: double
+                previousClose:
+                    type: number
+                    format: double
+                open:
+                    type: number
+                    format: double
+                dayHigh:
+                    type: number
+                    format: double
+                dayLow:
+                    type: number
+                    format: double
+                fiftyTwoWeekHigh:
+                    type: number
+                    format: double
+                fiftyTwoWeekLow:
+                    type: number
+                    format: double
+                volume:
+                    type: integer
+                    format: int64
+                    description: 'Warning: Values > 2^53 may lose precision in JavaScript'
+                avgVolume:
+                    type: integer
+                    format: int64
+                    description: 'Warning: Values > 2^53 may lose precision in JavaScript'
+                marketCap:
+                    type: integer
+                    format: int64
+                    description: 'Warning: Values > 2^53 may lose precision in JavaScript'
+                peRatio:
+                    type: number
+                    format: double
+                eps:
+                    type: number
+                    format: double
+                dividendYield:
+                    type: number
+                    format: double
+                changePercent:
+                    type: number
+                    format: double
+                fetchedAt:
+                    type: integer
+                    format: int64
+                    description: 'Warning: Values > 2^53 may lose precision in JavaScript'
+            required:
+                - symbol
+            description: YahooQuoteDetail is a rich quote from yahoo-finance2.
+        GetYahooHistoryRequest:
+            type: object
+            properties:
+                symbol:
+                    type: string
+                    maxLength: 20
+                    minLength: 1
+                range:
+                    type: string
+                    description: '"1d", "5d", "1mo", "3mo", "6mo", "1y", "5y", "max"'
+                interval:
+                    type: string
+                    description: '"1d", "1wk", "1mo"'
+            required:
+                - symbol
+        GetYahooHistoryResponse:
+            type: object
+            properties:
+                symbol:
+                    type: string
+                candles:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/YahooHistoryCandle'
+        YahooHistoryCandle:
+            type: object
+            properties:
+                date:
+                    type: integer
+                    format: int64
+                    description: 'Warning: Values > 2^53 may lose precision in JavaScript'
+                open:
+                    type: number
+                    format: double
+                high:
+                    type: number
+                    format: double
+                low:
+                    type: number
+                    format: double
+                close:
+                    type: number
+                    format: double
+                volume:
+                    type: integer
+                    format: int64
+                    description: 'Warning: Values > 2^53 may lose precision in JavaScript'
+                adjClose:
+                    type: number
+                    format: double
+            description: YahooHistoryCandle is one OHLCV bar.
+        SearchYahooSymbolsRequest:
+            type: object
+            properties:
+                query:
+                    type: string
+                    maxLength: 100
+                    minLength: 1
+            required:
+                - query
+        SearchYahooSymbolsResponse:
+            type: object
+            properties:
+                results:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/YahooSearchResult'
+        YahooSearchResult:
+            type: object
+            properties:
+                symbol:
+                    type: string
+                name:
+                    type: string
+                exchange:
+                    type: string
+                type:
+                    type: string
+            description: YahooSearchResult is one search match.
+        ListYahooTrendingRequest:
+            type: object
+            properties:
+                count:
+                    type: integer
+                    format: int32
+                    description: Number of trending symbols to return (default 10, max 50).
+        ListYahooTrendingResponse:
+            type: object
+            properties:
+                symbols:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/YahooTrendingSymbol'
+        YahooTrendingSymbol:
+            type: object
+            properties:
+                symbol:
+                    type: string
+                name:
+                    type: string
+                price:
+                    type: number
+                    format: double
+                changePercent:
+                    type: number
+                    format: double
+                volume:
+                    type: integer
+                    format: int64
+                    description: 'Warning: Values > 2^53 may lose precision in JavaScript'
+            description: YahooTrendingSymbol is one trending ticker.
+        GetYahooOptionsRequest:
+            type: object
+            properties:
+                symbol:
+                    type: string
+                    maxLength: 20
+                    minLength: 1
+                expiration:
+                    type: string
+                    description: Optional expiration date filter (ISO or epoch). Empty returns nearest expiry.
+            required:
+                - symbol
+        GetYahooOptionsResponse:
+            type: object
+            properties:
+                symbol:
+                    type: string
+                expirations:
+                    type: array
+                    items:
+                        type: string
+                calls:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/YahooOptionContract'
+                puts:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/YahooOptionContract'
+        YahooOptionContract:
+            type: object
+            properties:
+                contractSymbol:
+                    type: string
+                strike:
+                    type: number
+                    format: double
+                lastPrice:
+                    type: number
+                    format: double
+                bid:
+                    type: number
+                    format: double
+                ask:
+                    type: number
+                    format: double
+                volume:
+                    type: integer
+                    format: int64
+                    description: 'Warning: Values > 2^53 may lose precision in JavaScript'
+                openInterest:
+                    type: integer
+                    format: int64
+                    description: 'Warning: Values > 2^53 may lose precision in JavaScript'
+                impliedVolatility:
+                    type: number
+                    format: double
+                expiration:
+                    type: integer
+                    format: int64
+                    description: 'Warning: Values > 2^53 may lose precision in JavaScript'
+                type:
+                    type: string
+            description: YahooOptionContract is one call or put contract.
+        GetYahooProfileRequest:
+            type: object
+            properties:
+                symbol:
+                    type: string
+                    maxLength: 20
+                    minLength: 1
+            required:
+                - symbol
+        GetYahooProfileResponse:
+            type: object
+            properties:
+                profile:
+                    $ref: '#/components/schemas/YahooProfile'
+        YahooProfile:
+            type: object
+            properties:
+                symbol:
+                    type: string
+                name:
+                    type: string
+                sector:
+                    type: string
+                industry:
+                    type: string
+                country:
+                    type: string
+                website:
+                    type: string
+                description:
+                    type: string
+                fullTimeEmployees:
+                    type: integer
+                    format: int64
+                    description: 'Warning: Values > 2^53 may lose precision in JavaScript'
+                marketCap:
+                    type: integer
+                    format: int64
+                    description: 'Warning: Values > 2^53 may lose precision in JavaScript'
+                peRatio:
+                    type: number
+                    format: double
+                forwardPe:
+                    type: number
+                    format: double
+                dividendYield:
+                    type: number
+                    format: double
+                fiftyTwoWeekHigh:
+                    type: number
+                    format: double
+                fiftyTwoWeekLow:
+                    type: number
+                    format: double
+                beta:
+                    type: number
+                    format: double
+                revenue:
+                    type: number
+                    format: double
+                profitMargin:
+                    type: number
+                    format: double
+            description: YahooProfile is a company summary.
