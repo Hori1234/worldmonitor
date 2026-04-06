@@ -4,10 +4,11 @@ import type {
   GetYahooOptionsResponse,
 } from '../../../../src/generated/server/worldmonitor/market/v1/service_server';
 import { cachedFetchJson } from '../../../_shared/redis';
-import yahooFinance from 'yahoo-finance2';
+import { UPSTREAM_TIMEOUT_MS } from './_shared';
+import { CHROME_UA } from '../../../_shared/constants';
 
 const REDIS_KEY = 'market:yahoo-options:v1';
-const REDIS_TTL = 600; // 10 min
+const REDIS_TTL = 600;
 
 export async function getYahooOptions(
   _ctx: ServerContext,
@@ -16,22 +17,32 @@ export async function getYahooOptions(
   const symbol = req.symbol.trim().toUpperCase();
   if (!symbol) return { symbol: '', expirations: [], calls: [], puts: [] };
 
-  const expParam = req.expiration?.trim() || undefined;
+  const expParam = req.expiration?.trim() || '';
   const redisKey = `${REDIS_KEY}:${symbol}:${expParam || 'nearest'}`;
 
   try {
     const result = await cachedFetchJson<GetYahooOptionsResponse>(redisKey, REDIS_TTL, async () => {
-      const opts: any = {};
+      let url = `https://query2.finance.yahoo.com/v7/finance/options/${encodeURIComponent(symbol)}`;
       if (expParam) {
-        // yahoo-finance2 expects a Date for date param
         const d = new Date(expParam);
-        if (!isNaN(d.getTime())) opts.date = d;
+        if (!isNaN(d.getTime())) {
+          url += `?date=${Math.floor(d.getTime() / 1000)}`;
+        }
       }
 
-      const resp = await yahooFinance.options(symbol, opts);
-      if (!resp) return null;
+      const resp = await fetch(url, {
+        headers: { 'User-Agent': CHROME_UA },
+        signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
+      });
+      if (!resp.ok) return null;
 
-      const expirations = (resp.expirationDates ?? []).map((d: Date) => d.toISOString());
+      const data = await resp.json() as any;
+      const chain = data?.optionChain?.result?.[0];
+      if (!chain) return null;
+
+      const expirations = (chain.expirationDates ?? []).map((epoch: number) =>
+        new Date(epoch * 1000).toISOString(),
+      );
 
       const mapContract = (c: any, type: string) => ({
         contractSymbol: c.contractSymbol ?? '',
@@ -42,12 +53,13 @@ export async function getYahooOptions(
         volume: c.volume ?? 0,
         openInterest: c.openInterest ?? 0,
         impliedVolatility: c.impliedVolatility ?? 0,
-        expiration: c.expiration ? new Date(c.expiration).getTime() : 0,
+        expiration: (c.expiration ?? 0) * 1000,
         type,
       });
 
-      const calls = (resp.options?.[0]?.calls ?? []).map((c: any) => mapContract(c, 'call'));
-      const puts = (resp.options?.[0]?.puts ?? []).map((c: any) => mapContract(c, 'put'));
+      const options = chain.options?.[0] ?? {};
+      const calls = (options.calls ?? []).map((c: any) => mapContract(c, 'call'));
+      const puts = (options.puts ?? []).map((c: any) => mapContract(c, 'put'));
 
       return { symbol, expirations, calls, puts };
     });

@@ -4,10 +4,11 @@ import type {
   ListYahooTrendingResponse,
 } from '../../../../src/generated/server/worldmonitor/market/v1/service_server';
 import { cachedFetchJson } from '../../../_shared/redis';
-import yahooFinance from 'yahoo-finance2';
+import { UPSTREAM_TIMEOUT_MS } from './_shared';
+import { CHROME_UA } from '../../../_shared/constants';
 
 const REDIS_KEY = 'market:yahoo-trending:v1';
-const REDIS_TTL = 300; // 5 min
+const REDIS_TTL = 300;
 
 export async function listYahooTrending(
   _ctx: ServerContext,
@@ -18,29 +19,48 @@ export async function listYahooTrending(
 
   try {
     const result = await cachedFetchJson<ListYahooTrendingResponse>(redisKey, REDIS_TTL, async () => {
-      const resp = await yahooFinance.trendingSymbols('US', { count });
-
-      if (!resp?.quotes?.length) return null;
-
-      // Fetch quotes for trending symbols to get price data
-      const trendingSymbols = resp.quotes.map((q: any) => q.symbol).filter(Boolean);
-      const quotes = await yahooFinance.quote(trendingSymbols);
-      const quoteMap = new Map<string, any>();
-      const quoteArr = Array.isArray(quotes) ? quotes : [quotes];
-      for (const q of quoteArr) {
-        if (q?.symbol) quoteMap.set(q.symbol, q);
-      }
-
-      const symbols = trendingSymbols.slice(0, count).map((sym: string) => {
-        const q = quoteMap.get(sym);
-        return {
-          symbol: sym,
-          name: q?.shortName ?? q?.longName ?? '',
-          price: q?.regularMarketPrice ?? 0,
-          changePercent: q?.regularMarketChangePercent ?? 0,
-          volume: q?.regularMarketVolume ?? 0,
-        };
+      const url = `https://query2.finance.yahoo.com/v1/finance/trending/US?count=${count}`;
+      const resp = await fetch(url, {
+        headers: { 'User-Agent': CHROME_UA },
+        signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
       });
+      if (!resp.ok) return null;
+
+      const data = await resp.json() as any;
+      const tickers: any[] = data?.finance?.result?.[0]?.quotes ?? [];
+      const trendingSymbols = tickers.map((t: any) => t.symbol).filter(Boolean).slice(0, count);
+
+      if (!trendingSymbols.length) return null;
+
+      // Fetch quotes for each trending symbol via chart API
+      const symbols = await Promise.all(
+        trendingSymbols.map(async (sym: string) => {
+          try {
+            const chartUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?range=1d&interval=1m`;
+            const chartResp = await fetch(chartUrl, {
+              headers: { 'User-Agent': CHROME_UA },
+              signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
+            });
+            if (!chartResp.ok) return { symbol: sym, name: '', price: 0, changePercent: 0, volume: 0 };
+
+            const chartData = await chartResp.json() as any;
+            const meta = chartData?.chart?.result?.[0]?.meta ?? {};
+            const price = meta.regularMarketPrice ?? 0;
+            const prevClose = meta.chartPreviousClose ?? meta.previousClose ?? price;
+            const changePercent = prevClose ? ((price - prevClose) / prevClose) * 100 : 0;
+
+            return {
+              symbol: sym,
+              name: meta.shortName ?? meta.longName ?? '',
+              price,
+              changePercent: +changePercent.toFixed(2),
+              volume: meta.regularMarketVolume ?? 0,
+            };
+          } catch {
+            return { symbol: sym, name: '', price: 0, changePercent: 0, volume: 0 };
+          }
+        }),
+      );
 
       return symbols.length > 0 ? { symbols } : null;
     });

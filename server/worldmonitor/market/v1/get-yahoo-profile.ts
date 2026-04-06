@@ -4,10 +4,11 @@ import type {
   GetYahooProfileResponse,
 } from '../../../../src/generated/server/worldmonitor/market/v1/service_server';
 import { cachedFetchJson } from '../../../_shared/redis';
-import yahooFinance from 'yahoo-finance2';
+import { UPSTREAM_TIMEOUT_MS } from './_shared';
+import { CHROME_UA } from '../../../_shared/constants';
 
 const REDIS_KEY = 'market:yahoo-profile:v1';
-const REDIS_TTL = 3600; // 1 hour — profiles don't change often
+const REDIS_TTL = 3600;
 
 export async function getYahooProfile(
   _ctx: ServerContext,
@@ -20,35 +21,42 @@ export async function getYahooProfile(
 
   try {
     const result = await cachedFetchJson<GetYahooProfileResponse>(redisKey, REDIS_TTL, async () => {
-      const summary = await yahooFinance.quoteSummary(symbol, {
-        modules: ['assetProfile', 'defaultKeyStatistics', 'financialData', 'price'],
+      const modules = 'assetProfile,defaultKeyStatistics,financialData,price';
+      const url = `https://query2.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(symbol)}?modules=${modules}`;
+      const resp = await fetch(url, {
+        headers: { 'User-Agent': CHROME_UA },
+        signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
       });
-      if (!summary) return null;
+      if (!resp.ok) return null;
 
-      const profile = summary.assetProfile;
-      const stats = summary.defaultKeyStatistics;
-      const fin = summary.financialData;
-      const price = summary.price;
+      const data = await resp.json() as any;
+      const result = data?.quoteSummary?.result?.[0];
+      if (!result) return null;
+
+      const ap = result.assetProfile ?? {};
+      const stats = result.defaultKeyStatistics ?? {};
+      const fin = result.financialData ?? {};
+      const price = result.price ?? {};
 
       return {
         profile: {
           symbol,
-          name: price?.shortName ?? price?.longName ?? '',
-          sector: profile?.sector ?? '',
-          industry: profile?.industry ?? '',
-          country: profile?.country ?? '',
-          website: profile?.website ?? '',
-          description: profile?.longBusinessSummary ?? '',
-          fullTimeEmployees: profile?.fullTimeEmployees ?? 0,
-          marketCap: price?.marketCap ?? 0,
-          peRatio: stats?.trailingPE ?? 0,
-          forwardPe: stats?.forwardPE ?? 0,
-          dividendYield: (stats?.dividendYield ?? 0) * 100,
-          fiftyTwoWeekHigh: stats?.fiftyTwoWeekHigh ?? 0,
-          fiftyTwoWeekLow: stats?.fiftyTwoWeekLow ?? 0,
-          beta: stats?.beta ?? 0,
-          revenue: fin?.totalRevenue ?? 0,
-          profitMargin: (fin?.profitMargins ?? 0) * 100,
+          name: price.shortName ?? price.longName ?? '',
+          sector: ap.sector ?? '',
+          industry: ap.industry ?? '',
+          country: ap.country ?? '',
+          website: ap.website ?? '',
+          description: ap.longBusinessSummary ?? '',
+          fullTimeEmployees: ap.fullTimeEmployees ?? 0,
+          marketCap: price.marketCap?.raw ?? 0,
+          peRatio: stats.trailingPE?.raw ?? 0,
+          forwardPe: stats.forwardPE?.raw ?? 0,
+          dividendYield: (stats.dividendYield?.raw ?? 0) * 100,
+          fiftyTwoWeekHigh: stats.fiftyTwoWeekHigh?.raw ?? 0,
+          fiftyTwoWeekLow: stats.fiftyTwoWeekLow?.raw ?? 0,
+          beta: stats.beta?.raw ?? 0,
+          revenue: fin.totalRevenue?.raw ?? 0,
+          profitMargin: (fin.profitMargins?.raw ?? 0) * 100,
         },
       };
     });

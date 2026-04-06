@@ -14098,6 +14098,27 @@ body:has(.map-popup) [class*="deck-tooltip"] {
   }
 }
 
+
+.api-keys-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+  text-decoration: none;
+  margin-right: 4px;
+}
+
+.api-keys-btn:hover {
+  color: var(--accent);
+  border-color: var(--text-faint);
+}
 /* ============ AI Flow Toggle Styles (shared) ============ */
 
 .ai-flow-section-label {

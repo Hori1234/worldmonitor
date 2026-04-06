@@ -4,10 +4,11 @@ import type {
   SearchYahooSymbolsResponse,
 } from '../../../../src/generated/server/worldmonitor/market/v1/service_server';
 import { cachedFetchJson } from '../../../_shared/redis';
-import yahooFinance from 'yahoo-finance2';
+import { UPSTREAM_TIMEOUT_MS } from './_shared';
+import { CHROME_UA } from '../../../_shared/constants';
 
 const REDIS_KEY = 'market:yahoo-search:v1';
-const REDIS_TTL = 3600; // 1 hour — search results rarely change
+const REDIS_TTL = 3600;
 
 export async function searchYahooSymbols(
   _ctx: ServerContext,
@@ -20,10 +21,17 @@ export async function searchYahooSymbols(
 
   try {
     const result = await cachedFetchJson<SearchYahooSymbolsResponse>(redisKey, REDIS_TTL, async () => {
-      const resp = await yahooFinance.search(query);
-      if (!resp?.quotes?.length) return null;
+      const url = `https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(query)}&quotesCount=20&newsCount=0&listsCount=0`;
+      const resp = await fetch(url, {
+        headers: { 'User-Agent': CHROME_UA },
+        signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
+      });
+      if (!resp.ok) return null;
 
-      const results = resp.quotes
+      const data = await resp.json() as any;
+      const quotes: any[] = data?.quotes ?? [];
+
+      const results = quotes
         .filter((q: any) => q.symbol)
         .slice(0, 20)
         .map((q: any) => ({
