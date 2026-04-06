@@ -99,9 +99,7 @@ components:
                         - ANOMALY_SEVERITY_NORMAL
                         - ANOMALY_SEVERITY_MODERATE
                         - ANOMALY_SEVERITY_EXTREME
-                    description: |-
-                        AnomalySeverity represents the severity of a climate anomaly.
-                         Maps to existing TS union: 'normal' | 'moderate' | 'extreme'.
+                    description: "AnomalySeverity represents the severity of a climate anomaly.\r\n Maps to existing TS union: 'normal' | 'moderate' | 'extreme'."
             description: ListClimateAnomaliesRequest specifies filters for retrieving climate anomaly data.
         ListClimateAnomaliesResponse:
             type: object
@@ -137,9 +135,7 @@ components:
                         - ANOMALY_SEVERITY_NORMAL
                         - ANOMALY_SEVERITY_MODERATE
                         - ANOMALY_SEVERITY_EXTREME
-                    description: |-
-                        AnomalySeverity represents the severity of a climate anomaly.
-                         Maps to existing TS union: 'normal' | 'moderate' | 'extreme'.
+                    description: "AnomalySeverity represents the severity of a climate anomaly.\r\n Maps to existing TS union: 'normal' | 'moderate' | 'extreme'."
                 type:
                     type: string
                     enum:
@@ -149,9 +145,7 @@ components:
                         - ANOMALY_TYPE_WET
                         - ANOMALY_TYPE_DRY
                         - ANOMALY_TYPE_MIXED
-                    description: |-
-                        AnomalyType represents the type of climate anomaly.
-                         Maps to existing TS union: 'warm' | 'cold' | 'wet' | 'dry' | 'mixed'.
+                    description: "AnomalyType represents the type of climate anomaly.\r\n Maps to existing TS union: 'warm' | 'cold' | 'wet' | 'dry' | 'mixed'."
                 period:
                     type: string
                     minLength: 1
@@ -159,9 +153,7 @@ components:
             required:
                 - zone
                 - period
-            description: |-
-                ClimateAnomaly represents a temperature or precipitation deviation from historical norms.
-                 Sourced from Open-Meteo / ERA5 reanalysis data.
+            description: "ClimateAnomaly represents a temperature or precipitation deviation from historical norms.\r\n Sourced from Open-Meteo / ERA5 reanalysis data."
         GeoCoordinates:
             type: object
             properties:

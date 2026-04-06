@@ -55,6 +55,57 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Error'
+    /api/aviation/v1/get-open-sky-radar:
+        get:
+            tags:
+                - AviationService
+            summary: GetOpenSkyRadar
+            description: "Retrieves real-time radar state vectors from OpenSky\r\n Retrieves real-time radar state vectors from OpenSky"
+            operationId: GetOpenSkyRadar
+            parameters:
+                - name: lamin
+                  in: query
+                  required: false
+                  schema:
+                    type: number
+                    format: float
+                - name: lomin
+                  in: query
+                  required: false
+                  schema:
+                    type: number
+                    format: float
+                - name: lamax
+                  in: query
+                  required: false
+                  schema:
+                    type: number
+                    format: float
+                - name: lomax
+                  in: query
+                  required: false
+                  schema:
+                    type: number
+                    format: float
+            responses:
+                "200":
+                    description: Successful response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetOpenSkyRadarResponse'
+                "400":
+                    description: Validation error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ValidationError'
+                default:
+                    description: Error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
 components:
     schemas:
         Error:
@@ -117,9 +168,7 @@ components:
                         - FLIGHT_DELAY_SEVERITY_MODERATE
                         - FLIGHT_DELAY_SEVERITY_MAJOR
                         - FLIGHT_DELAY_SEVERITY_SEVERE
-                    description: |-
-                        FlightDelaySeverity represents the severity of flight delays at an airport.
-                         Maps to TS union: 'normal' | 'minor' | 'moderate' | 'major' | 'severe'.
+                    description: "FlightDelaySeverity represents the severity of flight delays at an airport.\r\n Maps to TS union: 'normal' | 'minor' | 'moderate' | 'major' | 'severe'."
             description: ListAirportDelaysRequest specifies filters for retrieving airport delay alerts.
         ListAirportDelaysResponse:
             type: object
@@ -185,9 +234,7 @@ components:
                         - FLIGHT_DELAY_SEVERITY_MODERATE
                         - FLIGHT_DELAY_SEVERITY_MAJOR
                         - FLIGHT_DELAY_SEVERITY_SEVERE
-                    description: |-
-                        FlightDelaySeverity represents the severity of flight delays at an airport.
-                         Maps to TS union: 'normal' | 'minor' | 'moderate' | 'major' | 'severe'.
+                    description: "FlightDelaySeverity represents the severity of flight delays at an airport.\r\n Maps to TS union: 'normal' | 'minor' | 'moderate' | 'major' | 'severe'."
                 avgDelayMinutes:
                     type: integer
                     format: int32
@@ -221,9 +268,7 @@ components:
                     description: 'Last data update time, as Unix epoch milliseconds.. Warning: Values > 2^53 may lose precision in JavaScript'
             required:
                 - id
-            description: |-
-                AirportDelayAlert represents a flight delay advisory at an airport.
-                 Sourced from FAA and Eurocontrol.
+            description: "AirportDelayAlert represents a flight delay advisory at an airport.\r\n Sourced from FAA and Eurocontrol."
         GeoCoordinates:
             type: object
             properties:
@@ -251,3 +296,85 @@ components:
                     format: int32
                     description: Total count of items matching the query, if known. Zero if the total is unknown.
             description: PaginationResponse contains pagination metadata returned alongside list results.
+        GetOpenSkyRadarRequest:
+            type: object
+            properties:
+                lamin:
+                    type: number
+                    format: float
+                lomin:
+                    type: number
+                    format: float
+                lamax:
+                    type: number
+                    format: float
+                lomax:
+                    type: number
+                    format: float
+        GetOpenSkyRadarResponse:
+            type: object
+            properties:
+                time:
+                    type: integer
+                    format: int64
+                    description: 'Warning: Values > 2^53 may lose precision in JavaScript'
+                states:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/RadarFlightState'
+        RadarFlightState:
+            type: object
+            properties:
+                icao24:
+                    type: string
+                callsign:
+                    type: string
+                originCountry:
+                    type: string
+                timePosition:
+                    type: integer
+                    format: int64
+                    description: 'Unix timestamp (seconds). Warning: Values > 2^53 may lose precision in JavaScript'
+                lastContact:
+                    type: integer
+                    format: int64
+                    description: 'Warning: Values > 2^53 may lose precision in JavaScript'
+                longitude:
+                    type: number
+                    format: float
+                latitude:
+                    type: number
+                    format: float
+                baroAltitude:
+                    type: number
+                    format: float
+                onGround:
+                    type: boolean
+                velocity:
+                    type: number
+                    format: float
+                trueTrack:
+                    type: number
+                    format: float
+                verticalRate:
+                    type: number
+                    format: float
+                sensors:
+                    type: array
+                    items:
+                        type: integer
+                        format: int32
+                geoAltitude:
+                    type: number
+                    format: float
+                squawk:
+                    type: string
+                spi:
+                    type: boolean
+                positionSource:
+                    type: integer
+                    format: int32
+                category:
+                    type: integer
+                    format: int32
+            description: Represents a single OpenSky flight state vector

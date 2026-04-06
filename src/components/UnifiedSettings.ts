@@ -16,6 +16,8 @@ const GEAR_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
 
 const DESKTOP_RELEASES_URL = 'https://github.com/koala73/worldmonitor/releases';
 
+import {  render} from 'lit';
+
 export interface UnifiedSettingsConfig {
   getPanelSettings: () => Record<string, PanelConfig>;
   togglePanel: (key: string) => void;
@@ -296,7 +298,10 @@ export class UnifiedSettings {
           <div class="us-status-content" id="usStatusContent"></div>
         </div>
         <div class="unified-settings-tab-panel${this.activeTab === 'database' ? ' active' : ''}" data-panel-id="database" id="us-tab-panel-database" role="tabpanel" aria-labelledby="us-tab-database"> 
-          <div class="us-database-content" id="usDatabaseContent"></div>
+          <div class="us-database-content" id="usDatabaseContent">
+            <div class="unified-settings-tab-panel${this.activeTab === 'database' ? ' active' : ''}" data-panel-id="database" id="us-tab-panel-database" role="tabpanel" aria-labelledby="us-tab-database">
+              </div>
+          </div>
         </div>
       </div>
     `;
@@ -749,12 +754,16 @@ export class UnifiedSettings {
   }
 
   private renderDatabaseTab(): void {
-    const container = this.overlay.querySelector('#usDatabaseContent');
-    if (!container) return;
-    container.innerHTML = `
-    <div class="unified-settings-tab-panel${this.activeTab === 'database' ? ' active' : ''}" data-panel-id="database" id="us-tab-panel-database" role="tabpanel" aria-labelledby="us-tab-database">
-          ${this.dbManager.render()}
-    </div>`;
+    
+    const dbcontainer = this.overlay.querySelector('#us-tab-panel-database');
+    if (!dbcontainer) return;
+    const dbSectionUI = document.createElement('div');
+    dbSectionUI.className = 'us-database-section';
+
+    render(this.dbManager.render(), dbSectionUI);
+    dbcontainer.appendChild(dbSectionUI);
+
+    this.dbManager.bindEvents(dbSectionUI);
   }
 
 }

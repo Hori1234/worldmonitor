@@ -1,9 +1,10 @@
 // db/api.ts
 import { db } from './index';
 import { users, endpoints, NewUser, NewEndpoint, publications, feedItems } from './schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, inArray } from 'drizzle-orm';
 import { User,EndpointPublic, FeedItem, Publication } from '@/db/types/Feed/userFeed';
-
+import { openskyPlanes, openskyPlanePositions } from './schema';
+import { sql, desc, gte, lte } from 'drizzle-orm';
 
 
 /**
@@ -532,3 +533,339 @@ export const deleteAllFeedItemsForUser = async (userId: string) => {
         console.error('Error deleting all feed items for user:', error);
   }
 }
+
+
+/**
+ * Adding the openSky planes api
+ */
+
+/**
+ * Upserts a plane record. If icao24 already exists, increments counterHits
+ * and updates the callsign.
+ */
+export const upsertPlane = async (
+  icao24: string,
+  callsign: string | null,
+  originCountry: string,
+  userId: string
+) => {
+  try {
+    await db.insert(openskyPlanes)
+      .values({
+        icao24,
+        callsign: callsign?.trim() || null,
+        originCountry,
+        counterHits: 1,
+        userId,
+      })
+      .onConflictDoUpdate({
+        target: openskyPlanes.icao24,
+        set: {
+          counterHits: sql`${openskyPlanes.counterHits} + 1`,
+          callsign: callsign?.trim() || sql`${openskyPlanes.callsign}`,
+        },
+      });
+  } catch (error) {
+    console.error('Error upserting plane:', error);
+  }
+};
+
+/**
+ * Gets a plane by its ICAO24 identifier.
+ */
+export const getPlaneByIcao24 = async (icao24: string) => {
+  try {
+    const result = await db.select().from(openskyPlanes).where(eq(openskyPlanes.icao24, icao24)).limit(1);
+    return result[0] ?? null;
+  } catch (error) {
+    console.error('Error getting plane by icao24:', error);
+    return null;
+  }
+};
+
+/**
+ * Gets all planes for a specific user.
+ */
+export const getPlanesForUser = async (userId: string) => {
+  try {
+    return await db.select().from(openskyPlanes).where(eq(openskyPlanes.userId, userId));
+  } catch (error) {
+    console.error('Error getting planes for user:', error);
+    return [];
+  }
+};
+
+/**
+ * Gets all planes across all users.
+ */
+export const getAllPlanes = async () => {
+  try {
+    return await db.select().from(openskyPlanes);
+  } catch (error) {
+    console.error('Error getting all planes:', error);
+    return [];
+  }
+};
+
+/**
+ * Updates a plane's metadata.
+ */
+export const updatePlane = async (
+  icao24: string,
+  data: Partial<Pick<typeof openskyPlanes.$inferSelect, 'callsign' | 'originCountry'>>
+) => {
+  try {
+    await db.update(openskyPlanes).set(data).where(eq(openskyPlanes.icao24, icao24));
+  } catch (error) {
+    console.error('Error updating plane:', error);
+  }
+};
+
+/**
+ * Deletes a specific plane and all its positions (cascade).
+ */
+export const deletePlane = async (icao24: string) => {
+  try {
+    await db.delete(openskyPlanes).where(eq(openskyPlanes.icao24, icao24));
+  } catch (error) {
+    console.error('Error deleting plane:', error);
+  }
+};
+
+/**
+ * Deletes all planes (and their positions) for a specific user.
+ */
+export const deleteAllPlanesForUser = async (userId: string) => {
+  try {
+    await db.delete(openskyPlanes).where(eq(openskyPlanes.userId, userId));
+  } catch (error) {
+    console.error('Error deleting all planes for user:', error);
+  }
+};
+
+
+// --- OpenSky Plane Positions Management ---
+
+/**
+ * Adds a position record for a plane.
+ */
+export const addPlanePosition = async (position: {
+  icao24: string;
+  timePosition: number | null;
+  lastContact: number;
+  longitude: number | null;
+  latitude: number | null;
+  baroAltitude: number | null;
+  onGround: boolean;
+  velocity: number | null;
+  trueTrack: number | null;
+  verticalRate: number | null;
+  sensors: number[] | null;
+  geoAltitude: number | null;
+  squawk: string | null;
+  spi: boolean;
+  positionSource: number;
+  category: number;
+}) => {
+  try {
+    await db.insert(openskyPlanePositions).values(position);
+  } catch (error) {
+    console.error('Error adding plane position:', error);
+  }
+};
+
+/**
+ * Gets all positions for a specific plane, newest first.
+ */
+export const getPositionsForPlane = async (icao24: string) => {
+  try {
+    return await db.select().from(openskyPlanePositions)
+      .where(eq(openskyPlanePositions.icao24, icao24))
+      .orderBy(desc(openskyPlanePositions.lastContact));
+  } catch (error) {
+    console.error('Error getting positions for plane:', error);
+    return [];
+  }
+};
+
+/**
+ * Gets the latest position for a specific plane.
+ */
+export const getLatestPositionForPlane = async (icao24: string) => {
+  try {
+    const result = await db.select().from(openskyPlanePositions)
+      .where(eq(openskyPlanePositions.icao24, icao24))
+      .orderBy(desc(openskyPlanePositions.lastContact))
+      .limit(1);
+    return result[0] ?? null;
+  } catch (error) {
+    console.error('Error getting latest position for plane:', error);
+    return null;
+  }
+};
+
+/**
+ * Gets the latest N positions across all planes, newest first.
+ */
+export const getLatestPositions = async (limit: number = 100) => {
+  try {
+    return await db.select().from(openskyPlanePositions)
+      .orderBy(desc(openskyPlanePositions.lastContact))
+      .limit(limit);
+  } catch (error) {
+    console.error('Error getting latest positions:', error);
+    return [];
+  }
+};
+
+/**
+ * Gets positions within geographic bounds, newest first.
+ */
+export const getPositionsByBounds = async (
+  bounds: { lamin: number; lomin: number; lamax: number; lomax: number },
+  limit: number = 100
+) => {
+  try {
+    return await db.select().from(openskyPlanePositions)
+      .where(and(
+        gte(openskyPlanePositions.latitude, bounds.lamin),
+        lte(openskyPlanePositions.latitude, bounds.lamax),
+        gte(openskyPlanePositions.longitude, bounds.lomin),
+        lte(openskyPlanePositions.longitude, bounds.lomax),
+      ))
+      .orderBy(desc(openskyPlanePositions.lastContact))
+      .limit(limit);
+  } catch (error) {
+    console.error('Error getting positions by bounds:', error);
+    return [];
+  }
+};
+
+/**
+ * Updates a specific position record.
+ */
+export const updatePlanePosition = async (
+  positionId: number,
+  data: Partial<typeof openskyPlanePositions.$inferSelect>
+) => {
+  try {
+    await db.update(openskyPlanePositions).set(data).where(eq(openskyPlanePositions.id, positionId));
+  } catch (error) {
+    console.error('Error updating plane position:', error);
+  }
+};
+
+/**
+ * Deletes a specific position by its ID.
+ */
+export const deletePlanePosition = async (positionId: number) => {
+  try {
+    await db.delete(openskyPlanePositions).where(eq(openskyPlanePositions.id, positionId));
+  } catch (error) {
+    console.error('Error deleting plane position:', error);
+  }
+};
+
+/**
+ * Deletes all positions for a specific plane.
+ */
+export const deleteAllPositionsForPlane = async (icao24: string) => {
+  try {
+    await db.delete(openskyPlanePositions).where(eq(openskyPlanePositions.icao24, icao24));
+  } catch (error) {
+    console.error('Error deleting all positions for plane:', error);
+  }
+};
+
+/**
+ * Bulk-save a radar snapshot: upserts planes + inserts all their positions.
+ * Used by the radar worker after fetching from the API.
+ */
+export const saveRadarSnapshot = async (
+  states: Array<{
+    icao24: string;
+    callsign: string;
+    originCountry: string;
+    timePosition: number;
+    lastContact: number;
+    longitude?: number;
+    latitude?: number;
+    baroAltitude?: number;
+    onGround: boolean;
+    velocity?: number;
+    trueTrack?: number;
+    verticalRate?: number;
+    sensors: number[];
+    geoAltitude?: number;
+    squawk?: string;
+    spi: boolean;
+    positionSource: number;
+    category: number;
+  }>,
+  userId: string
+) => {
+  if (!states || states.length === 0) return;
+  try {
+    for (const s of states) {
+      if (!s.icao24) continue;
+
+      // Table 1: openskyPlanes — aircraft metadata
+      await db.insert(openskyPlanes)
+        .values({
+          icao24: s.icao24,
+          callsign: s.callsign?.trim() || null,
+          originCountry: s.originCountry,
+          counterHits: 1,
+          userId,
+        })
+        .onConflictDoUpdate({
+          target: openskyPlanes.icao24,
+          set: {
+            counterHits: sql`${openskyPlanes.counterHits} + 1`,
+            callsign: s.callsign?.trim() || sql`${openskyPlanes.callsign}`,
+          },
+        });
+
+      // Table 2: openskyPlanePositions — telemetry snapshot
+      await db.insert(openskyPlanePositions).values({
+        icao24: s.icao24,
+        timePosition: s.timePosition ?? null,
+        lastContact: s.lastContact,
+        longitude: s.longitude ?? null,
+        latitude: s.latitude ?? null,
+        baroAltitude: s.baroAltitude ?? null,
+        onGround: s.onGround,
+        velocity: s.velocity ?? null,
+        trueTrack: s.trueTrack ?? null,
+        verticalRate: s.verticalRate ?? null,
+        sensors: s.sensors || null,
+        geoAltitude: s.geoAltitude ?? null,
+        squawk: s.squawk ?? null,
+        spi: s.spi,
+        positionSource: s.positionSource,
+        category: s.category,
+      });
+    }
+  } catch (error) {
+    console.error('Error saving radar snapshot:', error);
+  }
+};
+
+export const getRadarStatesWithMetadata = async (bounds?: { lamin: number; lomin: number; lamax: number; lomax: number }, limit: number = 100) => {
+  try {
+    const positions = bounds
+      ? await getPositionsByBounds(bounds, limit)
+      : await getLatestPositions(limit);
+    const icao24s = positions.map(p => p.icao24);
+    const planes = await db.select().from(openskyPlanes).where(inArray(openskyPlanes.icao24, icao24s));
+    const planeMap = new Map(planes.map(p => [p.icao24, p]));  
+    return positions.map(pos => ({
+      ...pos,
+      callsign: planeMap.get(pos.icao24)?.callsign || null,
+      originCountry: planeMap.get(pos.icao24)?.originCountry || null,
+    }));
+  } catch (error) {
+    console.error('Error getting radar states with metadata:', error);
+    return [];
+  }
+};

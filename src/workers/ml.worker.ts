@@ -4,7 +4,7 @@
  */
 
 import { pipeline, env } from '@xenova/transformers';
-import { MODEL_CONFIGS, type ModelConfig } from '@/config/ml-config';
+import { MODEL_CONFIGS, type ModelConfig } from '../config/ml-config';
 import { storeVectors, searchVectors, getCount, resetStore, sanitizeTitle, type VectorSearchResult } from './vector-db';
 
 // Configure transformers.js

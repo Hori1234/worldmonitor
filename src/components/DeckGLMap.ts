@@ -36,7 +36,7 @@ import type {
   MilitaryBaseEnriched,
 } from '@/types';
 import { fetchMilitaryBases, type MilitaryBaseCluster as ServerBaseCluster } from '@/services/military-bases';
-import type { AirportDelayAlert } from '@/services/aviation';
+import type { AirportDelayAlert ,FlightState} from '@/services/aviation';
 import type { IranEvent } from '@/services/conflict';
 import type { GpsJamHex } from '@/services/gps-interference';
 import type { DisplacementFlow } from '@/services/displacement';
@@ -309,7 +309,12 @@ export class DeckGLMap {
   private naturalEvents: NaturalEvent[] = [];
   private firmsFireData: Array<{ lat: number; lon: number; brightness: number; frp: number; confidence: number; region: string; acq_date: string; daynight: string }> = [];
   private techEvents: TechEventMarker[] = [];
+  
+  // Aviation data
   private flightDelays: AirportDelayAlert[] = [];
+  private radarData: FlightState[] = [];
+
+  // Related assets for popups
   private news: NewsItem[] = [];
   private newsLocations: Array<{ lat: number; lon: number; title: string; threatLevel: string; timestamp?: Date }> = [];
   private newsLocationFirstSeen = new Map<string, number>();
@@ -344,7 +349,7 @@ export class DeckGLMap {
   private onCountryClick?: (country: CountryClickPayload) => void;
   private onLayerChange?: (layer: keyof MapLayers, enabled: boolean, source: 'user' | 'programmatic') => void;
   private onStateChange?: (state: DeckMapState) => void;
-
+  private onViewportRadarRefresh?: () => void;
   // Highlighted assets
   private highlightedAssets: Record<AssetType, Set<string>> = {
     pipeline: new Set(),
@@ -384,6 +389,8 @@ export class DeckGLMap {
   private lastPipelineHighlightSignature = '';
   private debouncedRebuildLayers: (() => void) & { cancel(): void };
   private debouncedFetchBases: (() => void) & { cancel(): void };
+  // adding the debouncer for the radar data
+  private debouncedFetchRadar: (() => void) & { cancel(): void };
   private rafUpdateLayers: (() => void) & { cancel(): void };
   private moveTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
@@ -397,6 +404,11 @@ export class DeckGLMap {
       this.maplibreMap.resize();
       try { this.deckOverlay?.setProps({ layers: this.buildLayers() }); } catch { /* map mid-teardown */ }
     }, 150);
+
+    this.debouncedFetchRadar = debounce(() => {
+      if (this.state.layers.radar) this.onViewportRadarRefresh?.();
+    }, 2000);
+
     this.debouncedFetchBases = debounce(() => this.fetchServerBases(), 300);
     this.rafUpdateLayers = rafSchedule(() => {
       if (this.renderPaused || this.webglLost || !this.maplibreMap) return;
@@ -557,6 +569,7 @@ export class DeckGLMap {
       this.lastSCZoom = -1;
       this.rafUpdateLayers();
       this.debouncedFetchBases();
+      this.debouncedFetchRadar();  
       this.state.zoom = this.maplibreMap?.getZoom() ?? this.state.zoom;
       this.onStateChange?.(this.state);
     });
@@ -1044,6 +1057,9 @@ export class DeckGLMap {
     const filteredOutages = mapLayers.outages ? this.filterByTime(this.outages, (outage) => outage.pubDate) : [];
     const filteredCableAdvisories = mapLayers.cables ? this.filterByTime(this.cableAdvisories, (advisory) => advisory.reported) : [];
     const filteredFlightDelays = mapLayers.flights ? this.filterByTime(this.flightDelays, (delay) => delay.updatedAt) : [];
+    const filteredRadar = this.filterByTime(this.radarData, (f) => f.timePosition || new Date());
+    
+    // const filteredFlightRadar = mapLayers.radar ? this.filterByTime(this.radarData, (flight) => flight.lastSeen) : [];
     const filteredMilitaryFlights = mapLayers.military ? this.filterByTime(this.militaryFlights, (flight) => flight.lastSeen) : [];
     const filteredMilitaryVessels = mapLayers.military ? this.filterByTime(this.militaryVessels, (vessel) => vessel.lastAisUpdate) : [];
     const filteredMilitaryFlightClusters = mapLayers.military ? this.filterMilitaryFlightClustersByTime(this.militaryFlightClusters) : [];
@@ -1194,6 +1210,25 @@ export class DeckGLMap {
     // Flight delays layer
     if (mapLayers.flights && filteredFlightDelays.length > 0) {
       layers.push(this.createFlightDelaysLayer(filteredFlightDelays));
+    }
+
+    if (mapLayers.radar && this.radarData.length > 0) {
+        let visibleRadar = this.filterByTime(this.radarData, (f) => f.timePosition || new Date());
+        const bounds = this.maplibreMap?.getBounds();
+        if (bounds) {
+          const south = bounds.getSouth();
+          const north = bounds.getNorth();
+          const west = bounds.getWest();
+          const east = bounds.getEast();
+          visibleRadar = visibleRadar.filter(f =>
+            f.latitude != null && f.longitude != null &&
+            f.latitude >= south && f.latitude <= north &&
+            f.longitude >= west && f.longitude <= east
+          );
+        }
+        if (visibleRadar.length > 0) {
+          layers.push(this.createRadarLayer(visibleRadar));
+        }
     }
 
     // Protests layer (Supercluster-based deck.gl layers)
@@ -1629,6 +1664,53 @@ export class DeckGLMap {
       radiusMinPixels: 4,
       radiusMaxPixels: 15,
       pickable: true,
+    });
+  }
+
+  private createRadarLayer(flights: FlightState[]): ScatterplotLayer {
+    return new ScatterplotLayer({
+      id: 'radar-layer',
+      data: flights,
+      // Map valid lon/lat fields. Flights with nulls should be gracefully handled or filtered out
+      getPosition: (d) => [d.longitude || 0, d.latitude || 0],
+      getRadius: (d) => {
+        // You can make heavy aircraft larger depending on their category or velocity!
+        if (d.velocity && d.velocity > 250) return 9000;
+        if (d.onGround) return 4000;
+        return 6000;
+      },
+      getFillColor: (d) => {
+        if (d.onGround) return [180, 180, 180, 200] as [number, number, number, number]; // Grey for grounded
+        if (d.velocity && d.velocity > 250) return [255, 50, 50, 200] as [number, number, number, number]; // Red for very fast
+        return [255, 140, 0, 200] as [number, number, number, number]; // Standard Orange
+      },
+      radiusMinPixels: 2,
+      radiusMaxPixels: 10,
+      pickable: true,
+      onClick: (info) => {
+        if (info.object && this.popup) {
+          const flight = info.object;
+          
+          this.popup.show({
+            type: 'radar',
+            data: {
+              id: flight.icao24 || flight.callsign || 'unknown',
+              name: flight.callsign ? `Flight ${flight.callsign}` : 'Unknown Aircraft',
+              description: `Target Details — Velocity: ${Math.round(flight.velocity || 0)} m/s, Barometric Altitude: ${Math.round(flight.baroAltitude || 0)}m${flight.onGround ? ' (Grounded)' : ''}`,
+              location: `Lat: ${flight.latitude?.toFixed(4)}, Lon: ${flight.longitude?.toFixed(4)}`,
+              lat: flight.latitude || 0,
+              lng: flight.longitude || 0,
+              country: flight.originCountry || 'Unknown Origin',
+              startDate: flight.timePosition ? new Date(flight.timePosition).toLocaleString() : 'N/A',
+              endDate: 'Active Tracking',
+              url: `https://globe.adsbexchange.com/?icao=${flight.icao24}`, // Adding ADSB web URL if they want to see it live
+              daysUntil: 0
+            },
+            x: info.x,
+            y: info.y
+          });
+        }
+      }
     });
   }
 
@@ -2996,6 +3078,10 @@ export class DeckGLMap {
       return;
     }
 
+    // *** ADD THIS: Hide the deck.gl hover tooltip so it doesn't linger behind the popup ***
+    const tooltipEl = this.container.querySelector('.deck-tooltip, [class*="deck-tooltip"]') as HTMLElement | null;
+    if (tooltipEl) tooltipEl.style.display = 'none';
+
     const rawClickLayerId = info.layer?.id || '';
     const layerId = rawClickLayerId.endsWith('-ghost') ? rawClickLayerId.slice(0, -6) : rawClickLayerId;
 
@@ -4021,6 +4107,11 @@ export class DeckGLMap {
     this.render();
   }
 
+  public setRadarData(flights: FlightState[]): void {
+    this.radarData = flights;
+    this.updateLayers(); // This tells DeckGL to redraw!
+  }
+
   public setMilitaryFlights(flights: MilitaryFlight[], clusters: MilitaryFlightCluster[] = []): void {
     this.militaryFlights = flights;
     this.militaryFlightClusters = clusters;
@@ -4256,6 +4347,10 @@ export class DeckGLMap {
 
   public setOnStateChange(callback: (state: DeckMapState) => void): void {
     this.onStateChange = callback;
+  }
+
+  public setOnViewportRadarRefresh(callback: () => void): void {
+    this.onViewportRadarRefresh = callback;
   }
 
   public getHotspotLevels(): Record<string, string> {
@@ -4652,11 +4747,22 @@ export class DeckGLMap {
     } catch { /* layers may not be ready */ }
   }
 
+  public getViewportBounds(): { lamin: number; lomin: number; lamax: number; lomax: number } | null {
+    const bounds = this.maplibreMap?.getBounds();
+    if (!bounds) return null;
+    return {
+      lamin: bounds.getSouth(),
+      lomin: bounds.getWest(),
+      lamax: bounds.getNorth(),
+      lomax: bounds.getEast(),
+    };
+  }
+
   public destroy(): void {
     this.debouncedRebuildLayers.cancel();
     this.debouncedFetchBases.cancel();
     this.rafUpdateLayers.cancel();
-
+    this.debouncedFetchRadar.cancel();
     if (this.moveTimeoutId) {
       clearTimeout(this.moveTimeoutId);
       this.moveTimeoutId = null;

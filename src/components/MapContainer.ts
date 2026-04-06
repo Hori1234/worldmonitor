@@ -28,7 +28,7 @@ import type {
   CyberThreat,
   CableHealthRecord,
 } from '@/types';
-import type { AirportDelayAlert } from '@/services/aviation';
+import type { AirportDelayAlert,FlightState } from '@/services/aviation';
 import type { DisplacementFlow } from '@/services/displacement';
 import type { Earthquake } from '@/services/earthquakes';
 import type { ClimateAnomaly } from '@/services/climate';
@@ -239,6 +239,11 @@ export class MapContainer {
     return this.svgMap?.getCenter() ?? null;
   }
 
+  public getViewportBounds(): { lamin: number; lomin: number; lamax: number; lomax: number } | null {
+    if (this.useDeckGL) return this.deckGLMap?.getViewportBounds() ?? null;
+    return null;
+  }
+
   public setTimeRange(range: TimeRange): void {
     if (this.useGlobe) { this.globeMap?.setTimeRange(range); return; }
     if (this.useDeckGL) { this.deckGLMap?.setTimeRange(range); } else { this.svgMap?.setTimeRange(range); }
@@ -323,6 +328,22 @@ export class MapContainer {
       this.deckGLMap?.setFlightDelays(delays);
     } else {
       this.svgMap?.setFlightDelays(delays);
+    }
+  }
+
+  public setRadarData(flights: FlightState[]): void {
+    if (this.useGlobe) { 
+      // If you haven't implemented globe yet, you can leave this empty or pass it along.
+      // this.globeMap?.setRadarData(flights); 
+      return;
+    }
+    
+    if (isMobileDevice()) {
+      // D3 SVG Mobile
+      // this.svgMap?.setRadarData(flights);
+    } else {
+      // Desktop WebGL
+      this.deckGLMap?.setRadarData(flights);
     }
   }
 
@@ -516,6 +537,10 @@ export class MapContainer {
     } else {
       this.svgMap?.onStateChanged(callback);
     }
+  }
+
+  public setOnViewportRadarRefresh(callback: () => void): void {
+    this.deckGLMap?.setOnViewportRadarRefresh(callback);
   }
 
   public getHotspotLevels(): Record<string, string> {

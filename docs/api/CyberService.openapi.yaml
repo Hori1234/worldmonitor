@@ -134,9 +134,7 @@ components:
                         - CYBER_THREAT_TYPE_MALWARE_HOST
                         - CYBER_THREAT_TYPE_PHISHING
                         - CYBER_THREAT_TYPE_MALICIOUS_URL
-                    description: |-
-                        CyberThreatType represents the classification of a cyber threat.
-                         Maps to TS union: 'c2_server' | 'malware_host' | 'phishing' | 'malicious_url'.
+                    description: "CyberThreatType represents the classification of a cyber threat.\r\n Maps to TS union: 'c2_server' | 'malware_host' | 'phishing' | 'malicious_url'."
                 source:
                     type: string
                     enum:
@@ -146,9 +144,7 @@ components:
                         - CYBER_THREAT_SOURCE_C2INTEL
                         - CYBER_THREAT_SOURCE_OTX
                         - CYBER_THREAT_SOURCE_ABUSEIPDB
-                    description: |-
-                        CyberThreatSource represents the intelligence source of a cyber threat.
-                         Maps to TS union: 'feodo' | 'urlhaus' | 'c2intel' | 'otx' | 'abuseipdb'.
+                    description: "CyberThreatSource represents the intelligence source of a cyber threat.\r\n Maps to TS union: 'feodo' | 'urlhaus' | 'c2intel' | 'otx' | 'abuseipdb'."
                 minSeverity:
                     type: string
                     enum:
@@ -157,9 +153,7 @@ components:
                         - CRITICALITY_LEVEL_MEDIUM
                         - CRITICALITY_LEVEL_HIGH
                         - CRITICALITY_LEVEL_CRITICAL
-                    description: |-
-                        CriticalityLevel represents a four-tier criticality classification for cyber and risk domains.
-                         Maps to existing TS union: 'low' | 'medium' | 'high' | 'critical'.
+                    description: "CriticalityLevel represents a four-tier criticality classification for cyber and risk domains.\r\n Maps to existing TS union: 'low' | 'medium' | 'high' | 'critical'."
             description: ListCyberThreatsRequest specifies filters for retrieving cyber threat indicators.
         ListCyberThreatsResponse:
             type: object
@@ -186,9 +180,7 @@ components:
                         - CYBER_THREAT_TYPE_MALWARE_HOST
                         - CYBER_THREAT_TYPE_PHISHING
                         - CYBER_THREAT_TYPE_MALICIOUS_URL
-                    description: |-
-                        CyberThreatType represents the classification of a cyber threat.
-                         Maps to TS union: 'c2_server' | 'malware_host' | 'phishing' | 'malicious_url'.
+                    description: "CyberThreatType represents the classification of a cyber threat.\r\n Maps to TS union: 'c2_server' | 'malware_host' | 'phishing' | 'malicious_url'."
                 source:
                     type: string
                     enum:
@@ -198,9 +190,7 @@ components:
                         - CYBER_THREAT_SOURCE_C2INTEL
                         - CYBER_THREAT_SOURCE_OTX
                         - CYBER_THREAT_SOURCE_ABUSEIPDB
-                    description: |-
-                        CyberThreatSource represents the intelligence source of a cyber threat.
-                         Maps to TS union: 'feodo' | 'urlhaus' | 'c2intel' | 'otx' | 'abuseipdb'.
+                    description: "CyberThreatSource represents the intelligence source of a cyber threat.\r\n Maps to TS union: 'feodo' | 'urlhaus' | 'c2intel' | 'otx' | 'abuseipdb'."
                 indicator:
                     type: string
                     description: Threat indicator value (IP, domain, or URL).
@@ -211,9 +201,7 @@ components:
                         - CYBER_THREAT_INDICATOR_TYPE_IP
                         - CYBER_THREAT_INDICATOR_TYPE_DOMAIN
                         - CYBER_THREAT_INDICATOR_TYPE_URL
-                    description: |-
-                        CyberThreatIndicatorType represents the type of threat indicator.
-                         Maps to TS union: 'ip' | 'domain' | 'url'.
+                    description: "CyberThreatIndicatorType represents the type of threat indicator.\r\n Maps to TS union: 'ip' | 'domain' | 'url'."
                 location:
                     $ref: '#/components/schemas/GeoCoordinates'
                 country:
@@ -227,9 +215,7 @@ components:
                         - CRITICALITY_LEVEL_MEDIUM
                         - CRITICALITY_LEVEL_HIGH
                         - CRITICALITY_LEVEL_CRITICAL
-                    description: |-
-                        CriticalityLevel represents a four-tier criticality classification for cyber and risk domains.
-                         Maps to existing TS union: 'low' | 'medium' | 'high' | 'critical'.
+                    description: "CriticalityLevel represents a four-tier criticality classification for cyber and risk domains.\r\n Maps to existing TS union: 'low' | 'medium' | 'high' | 'critical'."
                 malwareFamily:
                     type: string
                     description: Associated malware family, if known.
@@ -248,9 +234,7 @@ components:
                     description: 'Last seen time, as Unix epoch milliseconds.. Warning: Values > 2^53 may lose precision in JavaScript'
             required:
                 - id
-            description: |-
-                CyberThreat represents a cyber threat indicator aggregated from multiple sources.
-                 Sources include Feodo Tracker, URLhaus, OTX, AbuseIPDB, and C2Intel.
+            description: "CyberThreat represents a cyber threat indicator aggregated from multiple sources.\r\n Sources include Feodo Tracker, URLhaus, OTX, AbuseIPDB, and C2Intel."
         GeoCoordinates:
             type: object
             properties:

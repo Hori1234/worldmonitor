@@ -221,6 +221,7 @@ export const DEFAULT_MAP_LAYERS: MapLayers = {
   iranAttacks: false,
   ciiChoropleth: false,
   dayNight: false,
+  radar: false,
 };
 
 // Mobile defaults for finance variant
@@ -274,6 +275,7 @@ export const MOBILE_DEFAULT_MAP_LAYERS: MapLayers = {
   iranAttacks: false,
   ciiChoropleth: false,
   dayNight: false,
+  radar: false,
 };
 
 export const VARIANT_CONFIG: VariantConfig = {

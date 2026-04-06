@@ -1,7 +1,7 @@
 import type { MapLayers } from '@/types';
 
 export type MapRenderer = 'flat' | 'globe';
-export type MapVariant = 'full' | 'tech' | 'finance' | 'happy';
+export type MapVariant = 'full' | 'tech' | 'finance' | 'happy' | 'aviation';
 
 export interface LayerDefinition {
   key: keyof MapLayers;
@@ -66,6 +66,8 @@ export const LAYER_REGISTRY: Record<keyof MapLayers, LayerDefinition> = {
   happiness:                def('happiness',                '&#128522;', 'happiness',                'World Happiness'),
   speciesRecovery:          def('speciesRecovery',          '&#128062;', 'speciesRecovery',          'Species Recovery'),
   renewableInstallations:   def('renewableInstallations',   '&#9889;',   'renewableInstallations',   'Clean Energy'),
+  radar:                    def('radar',                    '&#128200;', 'radar',                    'Radar'),
+
 };
 
 const VARIANT_LAYER_ORDER: Record<MapVariant, Array<keyof MapLayers>> = {
@@ -78,6 +80,16 @@ const VARIANT_LAYER_ORDER: Record<MapVariant, Array<keyof MapLayers>> = {
     'outages', 'cyberThreats', 'natural', 'fires',
     'waterways', 'economic', 'minerals', 'gpsJamming',
     'ciiChoropleth', 'dayNight',
+  ],
+  aviation: [
+    'iranAttacks', 'hotspots', 'conflicts', 'geopoliticalBoundaries',
+    'bases', 'nuclear', 'irradiators', 'spaceports',
+    'cables', 'pipelines', 'datacenters', 'military',
+    'ais', 'tradeRoutes', 'flights', 'protests',
+    'ucdpEvents', 'displacement', 'climate', 'weather',
+    'outages', 'cyberThreats', 'natural', 'fires',
+    'waterways', 'economic', 'minerals', 'gpsJamming',
+    'ciiChoropleth', 'dayNight','radar'
   ],
   tech: [
     'startupHubs', 'techHQs', 'accelerators', 'cloudRegions',

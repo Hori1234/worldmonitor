@@ -325,10 +325,7 @@ components:
                     minimum: 0
                     format: double
                     description: Radius in km (required for exposure mode, defaults to 50).
-            description: |-
-                GetPopulationExposureRequest supports two modes:
-                 - countries mode (default): returns the priority countries list
-                 - exposure mode: estimates population within a radius of a point
+            description: "GetPopulationExposureRequest supports two modes:\r\n - countries mode (default): returns the priority countries list\r\n - exposure mode: estimates population within a radius of a point"
         GetPopulationExposureResponse:
             type: object
             properties:

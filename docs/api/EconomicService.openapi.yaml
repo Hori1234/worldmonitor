@@ -171,9 +171,7 @@ paths:
             parameters:
                 - name: energy_sources
                   in: query
-                  description: |-
-                    Energy source codes to query (e.g., "SUN", "WND", "COL").
-                     Empty returns all tracked sources (SUN, WND, COL).
+                  description: "Energy source codes to query (e.g., \"SUN\", \"WND\", \"COL\").\r\n Empty returns all tracked sources (SUN, WND, COL)."
                   required: false
                   schema:
                     type: string
@@ -676,9 +674,7 @@ components:
                     type: array
                     items:
                         type: string
-                        description: |-
-                            Energy source codes to query (e.g., "SUN", "WND", "COL").
-                             Empty returns all tracked sources (SUN, WND, COL).
+                        description: "Energy source codes to query (e.g., \"SUN\", \"WND\", \"COL\").\r\n Empty returns all tracked sources (SUN, WND, COL)."
                 years:
                     type: integer
                     format: int32

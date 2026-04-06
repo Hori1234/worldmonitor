@@ -131,6 +131,7 @@
   "header": {
     "world": "WORLD",
     "tech": "TECH",
+    "aviation": "AVIATION",
     "live": "LIVE",
     "search": "Search",
     "settings": "SETTINGS",
@@ -269,7 +270,8 @@
     "gulfEconomies": "Gulf Economies",
     "gulfIndices": "Gulf Indices",
     "gulfCurrencies": "Gulf Currencies",
-    "gulfOil": "Gulf Oil"
+    "gulfOil": "Gulf Oil",
+    "database": "Databases"
   },
   "commands": {
     "prefixes": {
@@ -1030,7 +1032,8 @@
         "kindness": "Acts of Kindness",
         "happiness": "World Happiness",
         "speciesRecovery": "Species Recovery",
-        "renewableInstallations": "Clean Energy"
+        "renewableInstallations": "Clean Energy",
+        "openSkyRadar": "OpenSky Radar"
       },
       "tooltip": {
         "earthquake": "Earthquake",

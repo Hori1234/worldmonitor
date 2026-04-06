@@ -300,9 +300,7 @@ components:
                         - OUTAGE_SEVERITY_PARTIAL
                         - OUTAGE_SEVERITY_MAJOR
                         - OUTAGE_SEVERITY_TOTAL
-                    description: |-
-                        OutageSeverity represents the severity of an internet outage.
-                         Maps to TS union: 'partial' | 'major' | 'total'.
+                    description: "OutageSeverity represents the severity of an internet outage.\r\n Maps to TS union: 'partial' | 'major' | 'total'."
                 categories:
                     type: array
                     items:

@@ -204,7 +204,7 @@ export class App {
       mapLayers.cyberThreats = false;
     }
     // One-time migration: reduce default-enabled sources (full variant only)
-    if (currentVariant === 'full') {
+    if (currentVariant === 'full' || currentVariant === 'aviation') {
       const baseKey = 'worldmonitor-sources-reduction-v3';
       if (!localStorage.getItem(baseKey)) {
         const defaultDisabled = computeDefaultDisabledSources();
@@ -319,6 +319,7 @@ export class App {
       syncDataFreshnessWithLayers: () => this.dataLoader.syncDataFreshnessWithLayers(),
       ensureCorrectZones: () => this.panelLayout.ensureCorrectZones(),
       refreshOpenCountryBrief: () => this.countryIntel.refreshOpenBrief(),
+      loadRadarForViewport: () => { void this.dataLoader.loadRadarMap(); },
     });
 
     // Wire cross-module callback: DataLoader → SearchManager
@@ -339,6 +340,7 @@ export class App {
   public async init(): Promise<void> {
     const initStart = performance.now();
     await initDB();
+    // await this.initializeDefaultUser();
     await initI18n();
     const aiFlow = getAiFlowSettings();
     if (aiFlow.browserModel || isDesktopRuntime()) {

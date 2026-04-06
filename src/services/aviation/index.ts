@@ -1,8 +1,10 @@
 import {
   AviationServiceClient,
+  RadarFlightState as ProtoRadarFlightState,
   type AirportDelayAlert as ProtoAlert,
 } from '@/generated/client/worldmonitor/aviation/v1/service_client';
 import { createCircuitBreaker } from '@/utils';
+import { getRadarStatesWithMetadata } from '@/db/api';
 
 // --- Consumer-friendly types (matching legacy shape exactly) ---
 
@@ -30,6 +32,28 @@ export interface AirportDelayAlert {
   reason?: string;
   source: FlightDelaySource;
   updatedAt: Date;
+}
+
+// Consumer-friendly map view of the radar state
+export interface FlightState {
+  icao24: string;
+  callsign: string;
+  originCountry: string;
+  timePosition?: Date;
+  lastContact?: Date;
+  longitude?: number;
+  latitude?: number;
+  baroAltitude?: number;
+  onGround: boolean;
+  velocity?: number;
+  trueTrack?: number;
+  verticalRate?: number;
+  sensors: number[];
+  geoAltitude?: number;
+  squawk?: string;
+  spi: boolean;
+  positionSource: number;
+  category: number;
 }
 
 // --- Internal: proto -> legacy mapping ---
@@ -88,10 +112,12 @@ function toDisplayAlert(proto: ProtoAlert): AirportDelayAlert {
   };
 }
 
+
 // --- Client + circuit breaker ---
 
 const client = new AviationServiceClient('', { fetch: (...args) => globalThis.fetch(...args) });
 const breaker = createCircuitBreaker<AirportDelayAlert[]>({ name: 'Flight Delays v2', cacheTtlMs: 2 * 60 * 60 * 1000, persistCache: true });
+
 
 // --- Main fetch (public API) ---
 
@@ -105,4 +131,80 @@ export async function fetchFlightDelays(): Promise<AirportDelayAlert[]> {
     });
     return response.alerts.map(toDisplayAlert);
   }, []);
+}
+
+
+// --- Additional radar fetch (public API) ---
+
+function toDisplayFlightState(proto: ProtoRadarFlightState) {
+  return {
+    icao24: proto.icao24,
+    callsign: proto.callsign,
+    originCountry: proto.originCountry,
+    timePosition: proto.timePosition ? new Date(proto.timePosition * 1000) : undefined,
+    lastContact: proto.lastContact ? new Date(proto.lastContact * 1000) : undefined,
+    longitude: proto.longitude,
+    latitude: proto.latitude,
+    baroAltitude: proto.baroAltitude,
+    onGround: proto.onGround,
+    velocity: proto.velocity,
+    trueTrack: proto.trueTrack,
+    verticalRate: proto.verticalRate,
+    sensors: proto.sensors,
+    geoAltitude: proto.geoAltitude,
+    squawk: proto.squawk,
+    spi: proto.spi,
+    positionSource: proto.positionSource,
+    category: proto.category,
+  };
+}
+
+// Note: Circuit breaker typing must match the eventual output mapping to `FlightState`
+const radarBreaker = createCircuitBreaker<FlightState[]>({ 
+  name: 'OpenSky Radar', 
+  cacheTtlMs: 10 * 30 * 1000,   //  10 minutes — OpenSky free tier allows ~400/day ≈ 1 per 3.6 min
+  persistCache: true 
+});
+
+export async function fetchRadar(bounds?: { lamin: number; lomin: number; lamax: number; lomax: number }): Promise<FlightState[]> {
+  return radarBreaker.execute(async () => {
+    // const response = await client.getOpenSkyRadar(bounds ?? {});
+    const response = await client.getOpenSkyRadar({});
+    
+    if (!response.states) return [];
+    return response.states.map(toDisplayFlightState);
+  }, []);
+}
+
+type DbRadarRow = Awaited<ReturnType<typeof getRadarStatesWithMetadata>>[number];
+
+function dbRowToFlightState(row: DbRadarRow): FlightState {
+  return {
+    icao24: row.icao24,
+    callsign: row.callsign ?? '',
+    originCountry: row.originCountry ?? '',
+    timePosition: row.timePosition ? new Date(row.timePosition * 1000) : undefined,
+    lastContact: row.lastContact ? new Date(row.lastContact * 1000) : undefined,
+    longitude: row.longitude ?? undefined,
+    latitude: row.latitude ?? undefined,
+    baroAltitude: row.baroAltitude ?? undefined,
+    onGround: row.onGround,
+    velocity: row.velocity ?? undefined,
+    trueTrack: row.trueTrack ?? undefined,
+    verticalRate: row.verticalRate ?? undefined,
+    sensors: row.sensors ?? [],
+    geoAltitude: row.geoAltitude ?? undefined,
+    squawk: row.squawk ?? undefined,
+    spi: row.spi,
+    positionSource: row.positionSource,
+    category: row.category,
+  };
+} 
+
+export async function fetchRadarFromDb(
+  bounds?: { lamin: number; lomin: number; lamax: number; lomax: number },
+  limit: number = 100
+): Promise<FlightState[]> {
+  const rows = await getRadarStatesWithMetadata(bounds, limit);
+  return rows.map(dbRowToFlightState);
 }

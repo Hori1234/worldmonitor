@@ -182,9 +182,7 @@ paths:
                     type: string
                 - name: tone_filter
                   in: query
-                  description: |-
-                    Tone filter appended to query (e.g., "tone>5" for positive, "tone<-5" for negative).
-                     Left empty to skip tone filtering.
+                  description: "Tone filter appended to query (e.g., \"tone>5\" for positive, \"tone<-5\" for negative).\r\n Left empty to skip tone filtering."
                   required: false
                   schema:
                     type: string
@@ -328,9 +326,7 @@ components:
                         - TREND_DIRECTION_RISING
                         - TREND_DIRECTION_STABLE
                         - TREND_DIRECTION_FALLING
-                    description: |-
-                        TrendDirection represents the directional movement of a metric over time.
-                         Used in markets, GDELT tension scores, and risk assessments.
+                    description: "TrendDirection represents the directional movement of a metric over time.\r\n Used in markets, GDELT tension scores, and risk assessments."
                 components:
                     $ref: '#/components/schemas/CiiComponents'
                 computedAt:
@@ -379,9 +375,7 @@ components:
                         - SEVERITY_LEVEL_LOW
                         - SEVERITY_LEVEL_MEDIUM
                         - SEVERITY_LEVEL_HIGH
-                    description: |-
-                        SeverityLevel represents a three-tier severity classification used across domains.
-                         Maps to existing TS unions: 'low' | 'medium' | 'high'.
+                    description: "SeverityLevel represents a three-tier severity classification used across domains.\r\n Maps to existing TS unions: 'low' | 'medium' | 'high'."
                 score:
                     type: number
                     maximum: 100
@@ -400,9 +394,7 @@ components:
                         - TREND_DIRECTION_RISING
                         - TREND_DIRECTION_STABLE
                         - TREND_DIRECTION_FALLING
-                    description: |-
-                        TrendDirection represents the directional movement of a metric over time.
-                         Used in markets, GDELT tension scores, and risk assessments.
+                    description: "TrendDirection represents the directional movement of a metric over time.\r\n Used in markets, GDELT tension scores, and risk assessments."
             description: StrategicRisk represents a strategic risk assessment for a country or region.
         GetPizzintStatusRequest:
             type: object
@@ -544,9 +536,7 @@ components:
                         - TREND_DIRECTION_RISING
                         - TREND_DIRECTION_STABLE
                         - TREND_DIRECTION_FALLING
-                    description: |-
-                        TrendDirection represents the directional movement of a metric over time.
-                         Used in markets, GDELT tension scores, and risk assessments.
+                    description: "TrendDirection represents the directional movement of a metric over time.\r\n Used in markets, GDELT tension scores, and risk assessments."
                 changePercent:
                     type: number
                     format: double
@@ -596,9 +586,7 @@ components:
                         - SEVERITY_LEVEL_LOW
                         - SEVERITY_LEVEL_MEDIUM
                         - SEVERITY_LEVEL_HIGH
-                    description: |-
-                        SeverityLevel represents a three-tier severity classification used across domains.
-                         Maps to existing TS unions: 'low' | 'medium' | 'high'.
+                    description: "SeverityLevel represents a three-tier severity classification used across domains.\r\n Maps to existing TS unions: 'low' | 'medium' | 'high'."
                 confidence:
                     type: number
                     maximum: 1
@@ -662,9 +650,7 @@ components:
                     description: Time span filter (e.g., "15min", "1h", "24h").
                 toneFilter:
                     type: string
-                    description: |-
-                        Tone filter appended to query (e.g., "tone>5" for positive, "tone<-5" for negative).
-                         Left empty to skip tone filtering.
+                    description: "Tone filter appended to query (e.g., \"tone>5\" for positive, \"tone<-5\" for negative).\r\n Left empty to skip tone filtering."
                 sort:
                     type: string
                     description: 'Sort mode: "DateDesc" (default), "ToneDesc", "ToneAsc", "HybridRel".'

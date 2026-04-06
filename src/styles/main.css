@@ -5950,8 +5950,20 @@ a.prediction-link:hover {
   border: 1px solid var(--red);
   z-index: 1000;
   overflow-y: auto;
-  box-shadow: 0 4px 24px rgba(255, 68, 68, 0.3);
+  filter: drop-shadow(0 4px 24px rgba(255, 68, 68, 0.3));
 }
+
+/* .deck-tooltip {
+  background: transparent !important;
+  padding: 0 !important;
+  color: inherit !important;
+  box-shadow: none !important;
+}
+
+body:has(.map-popup) .deck-tooltip,
+body:has(.map-popup) [class*="deck-tooltip"] {
+  display: none !important;
+} */
 
 .map-popup.map-popup-sheet {
   left: 12px !important;
@@ -16936,7 +16948,7 @@ body.has-breaking-alert .panels-grid {
 /* The state when the Database tab is clicked */
 .unified-settings-modal.database-active-modal {
   max-width: 90vw !important;  /* Expands to 90% of screen width */
-  width: 1200px !important;    /* Sets a generous fixed desktop width */
+  width: 80vw !important;    /* Sets a generous fixed desktop width */
   height: 85vh !important;     /* Increases the height heavily */
   max-height: 95vh !important; /* Safety limits to leave some background visible */
 }

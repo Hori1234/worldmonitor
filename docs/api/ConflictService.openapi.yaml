@@ -388,9 +388,7 @@ components:
                         - UCDP_VIOLENCE_TYPE_STATE_BASED
                         - UCDP_VIOLENCE_TYPE_NON_STATE
                         - UCDP_VIOLENCE_TYPE_ONE_SIDED
-                    description: |-
-                        UcdpViolenceType represents the UCDP violence classification.
-                         Maps to existing TS union: 'state-based' | 'non-state' | 'one-sided'.
+                    description: "UcdpViolenceType represents the UCDP violence classification.\r\n Maps to existing TS union: 'state-based' | 'non-state' | 'one-sided'."
                 sourceOriginal:
                     type: string
                     description: Original source of the event report.

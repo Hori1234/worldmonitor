@@ -243,9 +243,7 @@ components:
                         - AIS_DISRUPTION_TYPE_UNSPECIFIED
                         - AIS_DISRUPTION_TYPE_GAP_SPIKE
                         - AIS_DISRUPTION_TYPE_CHOKEPOINT_CONGESTION
-                    description: |-
-                        AisDisruptionType represents the type of AIS tracking anomaly.
-                         Maps to TS union: 'gap_spike' | 'chokepoint_congestion'.
+                    description: "AisDisruptionType represents the type of AIS tracking anomaly.\r\n Maps to TS union: 'gap_spike' | 'chokepoint_congestion'."
                 location:
                     $ref: '#/components/schemas/GeoCoordinates'
                 severity:

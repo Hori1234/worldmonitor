@@ -4,6 +4,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import * as Sentry from '@sentry/browser';
 import { inject } from '@vercel/analytics';
 import { App } from './App';
+import { initDb } from './db/index';
 import { initializeDefaultUser } from './db/authInit';
 const sentryDsn = import.meta.env.VITE_SENTRY_DSN?.trim();
 
@@ -251,15 +252,17 @@ requestAnimationFrame(() => {
 localStorage.removeItem('wm-settings-open');
 
 // Initialize the native SQLite database in Tauri (no-op in browser)
-  if ('__TAURI_INTERNALS__' in window || '__TAURI__' in window) {
-    try {
-      initializeDefaultUser().catch((e) => {
-        console.error("Failed to initialize local DB:", e);
-      });
-    } catch (e) {
-      console.error("Failed to initialize local DB:", e);
-    }
-  }
+ // Initialize the Database (Tauri Native SQLite or sql.js Browser Mock) and load default user
+try {
+  initDb()
+    .then(() => initializeDefaultUser())
+    .then(() => console.log("Database & User Initialization Complete."))
+    .catch((e) => {
+      console.error("Failed to initialize local DB or Default User:", e);
+    });
+} catch (e) {
+  console.error("Failed to initialize local DB:", e);
+}
 // Standalone windows: ?settings=1 = panel display settings, ?live-channels=1 = channel management
 // Both need i18n initialized so t() does not return undefined.
 const urlParams = new URL(location.href).searchParams;

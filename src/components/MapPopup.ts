@@ -1,5 +1,5 @@
 import type { ConflictZone, Hotspot, NewsItem, MilitaryBase, StrategicWaterway, APTGroup, NuclearFacility, EconomicCenter, GammaIrradiator, Pipeline, UnderseaCable, CableAdvisory, RepairShip, InternetOutage, AIDataCenter, AisDisruptionEvent, SocialUnrestEvent, MilitaryFlight, MilitaryVessel, MilitaryFlightCluster, MilitaryVesselCluster, NaturalEvent, Port, Spaceport, CriticalMineralProject, CyberThreat, GeopoliticalBoundary } from '@/types';
-import type { AirportDelayAlert } from '@/services/aviation';
+import type { AirportDelayAlert, FlightState } from '@/services/aviation';
 import type { Earthquake } from '@/services/earthquakes';
 import type { WeatherAlert } from '@/services/weather';
 import { UNDERSEA_CABLES } from '@/config';
@@ -14,7 +14,21 @@ import { getNaturalEventIcon } from '@/services/eonet';
 import { getHotspotEscalation, getEscalationChange24h } from '@/services/hotspot-escalation';
 import { getCableHealthRecord } from '@/services/cable-health';
 
-export type PopupType = 'conflict' | 'hotspot' | 'earthquake' | 'weather' | 'base' | 'waterway' | 'apt' | 'cyberThreat' | 'nuclear' | 'economic' | 'irradiator' | 'pipeline' | 'cable' | 'cable-advisory' | 'repair-ship' | 'outage' | 'datacenter' | 'datacenterCluster' | 'ais' | 'protest' | 'protestCluster' | 'flight' | 'militaryFlight' | 'militaryVessel' | 'militaryFlightCluster' | 'militaryVesselCluster' | 'natEvent' | 'port' | 'spaceport' | 'mineral' | 'startupHub' | 'cloudRegion' | 'techHQ' | 'accelerator' | 'techEvent' | 'techHQCluster' | 'techEventCluster' | 'techActivity' | 'geoActivity' | 'stockExchange' | 'financialCenter' | 'centralBank' | 'commodityHub' | 'iranEvent' | 'gpsJamming' | 'geopoliticalBoundary';
+export type PopupType = 'conflict' | 'hotspot' | 'earthquake' | 'weather' | 'base' | 'waterway' | 'apt' | 'cyberThreat' | 'nuclear' | 'economic' | 'irradiator' | 'pipeline' | 'cable' | 'cable-advisory' | 'repair-ship' | 'outage' | 'datacenter' | 'datacenterCluster' | 'ais' | 'protest' | 'protestCluster' | 'flight' | 'militaryFlight' | 'militaryVessel' | 'militaryFlightCluster' | 'militaryVesselCluster' | 'natEvent' | 'port' | 'spaceport' | 'mineral' | 'startupHub' | 'cloudRegion' | 'techHQ' | 'accelerator' | 'techEvent' | 'techHQCluster' | 'techEventCluster' | 'techActivity' | 'geoActivity' | 'stockExchange' | 'financialCenter' | 'centralBank' | 'commodityHub' | 'iranEvent' | 'gpsJamming' | 'geopoliticalBoundary' | 'radar';
+
+interface RadarPopupData {
+  id: string;
+  name: string;
+  description?: string;
+  location: string;
+  lat: number;
+  lng: number;
+  country: string;
+  startDate: string;
+  endDate: string;
+  url: string | null;
+  daysUntil: number;
+}
 
 interface TechEventPopupData {
   id: string;
@@ -144,7 +158,7 @@ interface DatacenterClusterData {
 
 interface PopupData {
   type: PopupType;
-  data: ConflictZone | Hotspot | Earthquake | WeatherAlert | MilitaryBase | StrategicWaterway | APTGroup | CyberThreat | NuclearFacility | EconomicCenter | GammaIrradiator | Pipeline | UnderseaCable | CableAdvisory | RepairShip | InternetOutage | AIDataCenter | AisDisruptionEvent | SocialUnrestEvent | AirportDelayAlert | MilitaryFlight | MilitaryVessel | MilitaryFlightCluster | MilitaryVesselCluster | NaturalEvent | Port | Spaceport | CriticalMineralProject | StartupHub | CloudRegion | TechHQ | Accelerator | TechEventPopupData | TechHQClusterData | TechEventClusterData | ProtestClusterData | DatacenterClusterData | TechHubActivity | GeoHubActivity | StockExchangePopupData | FinancialCenterPopupData | CentralBankPopupData | CommodityHubPopupData | IranEventPopupData | GpsJammingPopupData | GeopoliticalBoundary;
+  data: ConflictZone | Hotspot | Earthquake | WeatherAlert | MilitaryBase | StrategicWaterway | APTGroup | CyberThreat | NuclearFacility | EconomicCenter | GammaIrradiator | Pipeline | UnderseaCable | CableAdvisory | RepairShip | InternetOutage | AIDataCenter | AisDisruptionEvent | SocialUnrestEvent | AirportDelayAlert | MilitaryFlight | MilitaryVessel | MilitaryFlightCluster | MilitaryVesselCluster | NaturalEvent | Port | Spaceport | CriticalMineralProject | StartupHub | CloudRegion | TechHQ | Accelerator | TechEventPopupData | TechHQClusterData | TechEventClusterData | ProtestClusterData | DatacenterClusterData | TechHubActivity | GeoHubActivity | StockExchangePopupData | FinancialCenterPopupData | CentralBankPopupData | CommodityHubPopupData | IranEventPopupData | GpsJammingPopupData | GeopoliticalBoundary | RadarPopupData;
   relatedNews?: NewsItem[];
   x: number;
   y: number;
@@ -223,60 +237,222 @@ export class MapPopup {
     }, 0);
   }
 
-  private positionDesktopPopup(data: PopupData, containerRect: DOMRect): void {
-    if (!this.popup) return;
+  // public show(data: PopupData): void {
+  //   this.hide();
 
-    const popupWidth = 380;
-    const bottomBuffer = 50; // Buffer from viewport bottom
-    const topBuffer = 60; // Header height
+  //   this.isMobileSheet = isMobileDevice();
+  //   this.popup = document.createElement('div');
+  //   this.popup.className = this.isMobileSheet ? 'map-popup map-popup-sheet' : 'map-popup';
 
-    // Temporarily append popup off-screen to measure actual height
-    this.popup.style.visibility = 'hidden';
-    this.popup.style.top = '0';
-    this.popup.style.left = '-9999px';
-    document.body.appendChild(this.popup);
-    const popupHeight = this.popup.offsetHeight;
-    document.body.removeChild(this.popup);
-    this.popup.style.visibility = '';
+  //   const content = this.renderContent(data);
+  //   this.popup.innerHTML = this.isMobileSheet
+  //     ? `<button class="map-popup-sheet-handle" aria-label="${t('common.close')}"></button>${content}`
+  //     : content;
 
-    // Convert container-relative coords to viewport coords
-    const viewportX = containerRect.left + data.x;
-    const viewportY = containerRect.top + data.y;
+  //   const containerRect = this.container.getBoundingClientRect();
 
-    // Horizontal positioning (viewport-relative)
-    const maxX = window.innerWidth - popupWidth - 20;
-    let left = viewportX + 20;
-    if (left > maxX) {
-      // Position to the left of click if it would overflow right
-      left = Math.max(10, viewportX - popupWidth - 20);
-    }
+  //   if (this.isMobileSheet) {
+  //     this.popup.style.left = '';
+  //     this.popup.style.top = '';
+  //     this.popup.style.transform = '';
+  //     document.body.appendChild(this.popup);
+  //   } else {
+  //     // Append ONCE, invisible via opacity so nothing paints (no box-shadow, no border, nothing).
+  //     // opacity:0 also promotes the element to its own compositor layer, preventing
+  //     // WebGL canvas smear-through on Windows hardware-accelerated compositing.
+  //     this.popup.style.opacity = '0';
+  //     this.popup.style.pointerEvents = 'none';
+  //     document.body.appendChild(this.popup);
 
-    // Vertical positioning - prefer below click, but flip above if needed
-    const availableBelow = window.innerHeight - viewportY - bottomBuffer;
-    const availableAbove = viewportY - topBuffer;
+  //     // Measure and position while invisible (element is in DOM, offsetHeight works)
+  //     this.positionDesktopPopup(data, containerRect);
 
-    let top: number;
-    if (availableBelow >= popupHeight) {
-      // Enough space below - position below click
-      top = viewportY + 10;
-    } else if (availableAbove >= popupHeight) {
-      // Not enough below, but enough above - position above click
-      top = viewportY - popupHeight - 10;
-    } else {
-      // Limited space both ways - position at top buffer
-      top = topBuffer;
-    }
+  //     // Reveal in a single style recalc
+  //     this.popup.style.opacity = '';
+  //     this.popup.style.pointerEvents = '';
+  //   }
 
-    // CRITICAL: Ensure popup stays within viewport vertically
-    top = Math.max(topBuffer, top);
-    const maxTop = window.innerHeight - popupHeight - bottomBuffer;
-    if (maxTop > topBuffer) {
-      top = Math.min(top, maxTop);
-    }
+  //   // Close button handler
+  //   this.popup.querySelector('.popup-close')?.addEventListener('click', () => this.hide());
+  //   this.popup.querySelector('.map-popup-sheet-handle')?.addEventListener('click', () => this.hide());
 
-    this.popup.style.left = `${left}px`;
-    this.popup.style.top = `${top}px`;
+  //   if (this.isMobileSheet) {
+  //     this.popup.addEventListener('touchstart', this.handleSheetTouchStart, { passive: true });
+  //     this.popup.addEventListener('touchmove', this.handleSheetTouchMove, { passive: false });
+  //     this.popup.addEventListener('touchend', this.handleSheetTouchEnd);
+  //     this.popup.addEventListener('touchcancel', this.handleSheetTouchEnd);
+  //     requestAnimationFrame(() => {
+  //       if (!this.popup) return;
+  //       this.popup.classList.add('open');
+  //       this.popup.addEventListener('transitionend', () => {
+  //         if (this.popup) this.popup.style.willChange = 'auto';
+  //       }, { once: true });
+  //     });
+  //   }
+
+  //   // Click outside to close
+  //   if (this.outsideListenerTimeoutId !== null) {
+  //     window.clearTimeout(this.outsideListenerTimeoutId);
+  //   }
+  //   this.outsideListenerTimeoutId = window.setTimeout(() => {
+  //     document.addEventListener('click', this.handleOutsideClick);
+  //     document.addEventListener('touchstart', this.handleOutsideClick);
+  //     document.addEventListener('keydown', this.handleEscapeKey);
+  //     this.outsideListenerTimeoutId = null;
+  //   }, 0);
+  // }
+
+   private positionDesktopPopup(data: PopupData, containerRect: DOMRect): void {
+      if (!this.popup) return;
+
+      const popupWidth = 380;
+      const bottomBuffer = 50; // Buffer from viewport bottom
+      const topBuffer = 60; // Header height
+
+      // Temporarily append popup off-screen to measure actual height
+      this.popup.style.visibility = 'hidden';
+      this.popup.style.top = '0';
+      this.popup.style.left = '-9999px';
+      document.body.appendChild(this.popup);
+      const popupHeight = this.popup.offsetHeight;
+      document.body.removeChild(this.popup);
+      this.popup.style.visibility = '';
+
+      // Convert container-relative coords to viewport coords
+      const viewportX = containerRect.left + data.x;
+      const viewportY = containerRect.top + data.y;
+
+      // Horizontal positioning (viewport-relative)
+      const maxX = window.innerWidth - popupWidth - 20;
+      let left = viewportX + 20;
+      if (left > maxX) {
+        // Position to the left of click if it would overflow right
+        left = Math.max(10, viewportX - popupWidth - 20);
+      }
+
+      // Vertical positioning - prefer below click, but flip above if needed
+      const availableBelow = window.innerHeight - viewportY - bottomBuffer;
+      const availableAbove = viewportY - topBuffer;
+
+      let top: number;
+      if (availableBelow >= popupHeight) {
+        // Enough space below - position below click
+        top = viewportY + 10;
+      } else if (availableAbove >= popupHeight) {
+        // Not enough below, but enough above - position above click
+        top = viewportY - popupHeight - 10;
+      } else {
+        // Limited space both ways - position at top buffer
+        top = topBuffer;
+      }
+
+      // CRITICAL: Ensure popup stays within viewport vertically
+      top = Math.max(topBuffer, top);
+      const maxTop = window.innerHeight - popupHeight - bottomBuffer;
+      if (maxTop > topBuffer) {
+        top = Math.min(top, maxTop);
+      }
+
+      this.popup.style.left = `${left}px`;
+      this.popup.style.top = `${top}px`;
   }
+
+  // private positionDesktopPopup(data: PopupData, containerRect: DOMRect): void {
+  //   if (!this.popup) return;
+
+  //   const popupWidth = 380;
+  //   const bottomBuffer = 50;
+  //   const topBuffer = 60;
+
+  //   // Element is already in DOM (opacity:0), measure directly
+  //   const popupHeight = this.popup.offsetHeight;
+
+  //   const viewportX = containerRect.left + data.x;
+  //   const viewportY = containerRect.top + data.y;
+
+  //   const maxX = window.innerWidth - popupWidth - 20;
+  //   let left = viewportX + 20;
+  //   if (left > maxX) {
+  //     left = Math.max(10, viewportX - popupWidth - 20);
+  //   }
+
+  //   const availableBelow = window.innerHeight - viewportY - bottomBuffer;
+  //   const availableAbove = viewportY - topBuffer;
+
+  //   let top: number;
+  //   if (availableBelow >= popupHeight) {
+  //     top = viewportY + 10;
+  //   } else if (availableAbove >= popupHeight) {
+  //     top = viewportY - popupHeight - 10;
+  //   } else {
+  //     top = topBuffer;
+  //   }
+
+  //   top = Math.max(topBuffer, top);
+  //   const maxTop = window.innerHeight - popupHeight - bottomBuffer;
+  //   if (maxTop > topBuffer) {
+  //     top = Math.min(top, maxTop);
+  //   }
+
+  //   this.popup.style.left = `${left}px`;
+  //   this.popup.style.top = `${top}px`;
+  // }
+  // private positionDesktopPopup(data: PopupData, containerRect: DOMRect): void {
+  //   if (!this.popup) return;
+
+  //   const popupWidth = 380;
+  //   const bottomBuffer = 50; // Buffer from viewport bottom
+  //   const topBuffer = 60; // Header height
+
+  //   // Temporarily append popup off-screen to measure actual height
+  //   this.popup.style.visibility = 'hidden';
+  //   this.popup.style.top = '0';
+  //   this.popup.style.left = '-9999px';
+  //   document.body.appendChild(this.popup);
+  //   const popupHeight = this.popup.offsetHeight;
+  //   document.body.removeChild(this.popup);
+  //   this.popup.style.visibility = '';
+
+  //   // Convert container-relative coords to viewport coords
+  //   const viewportX = containerRect.left + data.x;
+  //   const viewportY = containerRect.top + data.y;
+
+  //   // Horizontal positioning (viewport-relative)
+  //   const maxX = window.innerWidth - popupWidth - 20;
+  //   let left = viewportX + 20;
+
+
+  //   if (left > maxX) {
+  //     // Position to the left of click if it would overflow right
+  //     left = Math.max(10, viewportX - popupWidth - 20);
+  //   }
+
+  //   // Vertical positioning - prefer below click, but flip above if needed
+  //   const availableBelow = window.innerHeight - viewportY - bottomBuffer;
+  //   const availableAbove = viewportY - topBuffer;
+
+  //   let top: number;
+  //   if (availableBelow >= popupHeight) {
+  //     // Enough space below - position below click
+  //     top = viewportY + 10;
+  //   } else if (availableAbove >= popupHeight) {
+  //     // Not enough below, but enough above - position above click
+  //     top = viewportY - popupHeight - 10;
+  //   } else {
+  //     // Limited space both ways - position at top buffer
+  //     top = topBuffer;
+  //   }
+
+  //   // CRITICAL: Ensure popup stays within viewport vertically
+  //   top = Math.max(topBuffer, top);
+  //   const maxTop = window.innerHeight - popupHeight - bottomBuffer;
+  //   if (maxTop > topBuffer) {
+  //     top = Math.min(top, maxTop);
+  //   }
+
+  //   this.popup.style.left = `${left}px`;
+  //   this.popup.style.top = `${top}px`;
+  // }
 
   private handleOutsideClick = (e: Event) => {
     if (this.popup && !this.popup.contains(e.target as Node)) {
@@ -458,6 +634,8 @@ export class MapPopup {
         return this.renderIranEventPopup(data.data as IranEventPopupData);
       case 'gpsJamming':
         return this.renderGpsJammingPopup(data.data as GpsJammingPopupData);
+      case 'radar':
+        return this.renderRadarPopup(data.data as RadarPopupData);
       default:
         return '';
     }
@@ -1160,6 +1338,8 @@ export class MapPopup {
       </div>
     `;
   }
+
+  
 
   private renderAPTPopup(apt: APTGroup): string {
     return `
@@ -2718,6 +2898,38 @@ export class MapPopup {
           <div class="popup-stat">
             <span class="stat-label">${t('popups.gpsJamming.h3Hex')}</span>
             <span class="stat-value" style="font-size:10px">${escapeHtml(data.h3)}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  private renderRadarPopup(radar: RadarPopupData): string {
+    return `
+      <div class="popup-header radar">
+        <span class="popup-title">${escapeHtml(radar.name)}</span>
+        <span class="popup-badge high">${t('popups.radar')}</span>
+        <button class="popup-close" aria-label="Close">×</button>
+      </div>
+      <div class="popup-body">
+        <div class="popup-subtitle">${escapeHtml(radar.description || '')}</div>
+        <div class="popup-location">${escapeHtml(radar.location)}</div>
+        <div class="popup-stats">
+          <div class="popup-stat">
+            <span class="stat-label">${t('popups.startDate')}</span>
+            <span class="stat-value">${escapeHtml(radar.startDate)}</span>
+          </div>
+          <div class="popup-stat">
+            <span class="stat-label">${t('popups.endDate')}</span>
+            <span class="stat-value">${escapeHtml(radar.endDate)}</span>
+          </div>
+          <div class="popup-stat">
+            <span class="stat-label">${t('popups.daysUntil')}</span>
+            <span class="stat-value">${escapeHtml(radar.daysUntil.toString())}</span>
+          </div>
+          <div class="popup-stat">
+            <span class="stat-label">${t('popups.url')}</span>
+            <span class="stat-value">${radar.url ? `<a href="${escapeHtml(radar.url)}" target="_blank">${escapeHtml(radar.url)}</a>` : t('popups.unknown')}</span>
           </div>
         </div>
       </div>
