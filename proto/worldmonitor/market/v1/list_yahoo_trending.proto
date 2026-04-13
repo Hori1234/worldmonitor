@@ -1,0 +1,14 @@
+syntax = "proto3";
+package worldmonitor.market.v1;
+
+import "sebuf/http/annotations.proto";
+import "worldmonitor/market/v1/yahoo_quote_detail.proto";
+
+message ListYahooTrendingRequest {
+  // Number of trending symbols to return (default 10, max 50).
+  int32 count = 1 [(sebuf.http.query) = { name: "count" }];
+}
+
+message ListYahooTrendingResponse {
+  repeated YahooTrendingSymbol symbols = 1;
+}

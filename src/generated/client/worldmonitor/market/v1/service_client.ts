@@ -165,6 +165,141 @@ export interface GulfQuote {
   sparkline: number[];
 }
 
+export interface GetYahooQuoteRequest {
+  symbol: string;
+}
+
+export interface GetYahooQuoteResponse {
+  quote?: YahooQuoteDetail;
+}
+
+export interface YahooQuoteDetail {
+  symbol: string;
+  name: string;
+  exchange: string;
+  currency: string;
+  price: number;
+  previousClose: number;
+  open: number;
+  dayHigh: number;
+  dayLow: number;
+  fiftyTwoWeekHigh: number;
+  fiftyTwoWeekLow: number;
+  volume: number;
+  avgVolume: number;
+  marketCap: number;
+  peRatio: number;
+  eps: number;
+  dividendYield: number;
+  changePercent: number;
+  fetchedAt: number;
+}
+
+export interface GetYahooHistoryRequest {
+  symbol: string;
+  range: string;
+  interval: string;
+}
+
+export interface GetYahooHistoryResponse {
+  symbol: string;
+  candles: YahooHistoryCandle[];
+}
+
+export interface YahooHistoryCandle {
+  date: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+  adjClose: number;
+}
+
+export interface SearchYahooSymbolsRequest {
+  query: string;
+}
+
+export interface SearchYahooSymbolsResponse {
+  results: YahooSearchResult[];
+}
+
+export interface YahooSearchResult {
+  symbol: string;
+  name: string;
+  exchange: string;
+  type: string;
+}
+
+export interface ListYahooTrendingRequest {
+  count: number;
+}
+
+export interface ListYahooTrendingResponse {
+  symbols: YahooTrendingSymbol[];
+}
+
+export interface YahooTrendingSymbol {
+  symbol: string;
+  name: string;
+  price: number;
+  changePercent: number;
+  volume: number;
+}
+
+export interface GetYahooOptionsRequest {
+  symbol: string;
+  expiration: string;
+}
+
+export interface GetYahooOptionsResponse {
+  symbol: string;
+  expirations: string[];
+  calls: YahooOptionContract[];
+  puts: YahooOptionContract[];
+}
+
+export interface YahooOptionContract {
+  contractSymbol: string;
+  strike: number;
+  lastPrice: number;
+  bid: number;
+  ask: number;
+  volume: number;
+  openInterest: number;
+  impliedVolatility: number;
+  expiration: number;
+  type: string;
+}
+
+export interface GetYahooProfileRequest {
+  symbol: string;
+}
+
+export interface GetYahooProfileResponse {
+  profile?: YahooProfile;
+}
+
+export interface YahooProfile {
+  symbol: string;
+  name: string;
+  sector: string;
+  industry: string;
+  country: string;
+  website: string;
+  description: string;
+  fullTimeEmployees: number;
+  marketCap: number;
+  peRatio: number;
+  forwardPe: number;
+  dividendYield: number;
+  fiftyTwoWeekHigh: number;
+  fiftyTwoWeekLow: number;
+  beta: number;
+  revenue: number;
+  profitMargin: number;
+}
+
 export interface FieldViolation {
   field: string;
   description: string;
@@ -407,6 +542,159 @@ export class MarketServiceClient {
     }
 
     return await resp.json() as ListGulfQuotesResponse;
+  }
+
+  async getYahooQuote(req: GetYahooQuoteRequest, options?: MarketServiceCallOptions): Promise<GetYahooQuoteResponse> {
+    let path = "/api/market/v1/get-yahoo-quote";
+    const params = new URLSearchParams();
+    if (req.symbol != null && req.symbol !== "") params.set("symbol", String(req.symbol));
+    const url = this.baseURL + path + (params.toString() ? "?" + params.toString() : "");
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      ...this.defaultHeaders,
+      ...options?.headers,
+    };
+
+    const resp = await this.fetchFn(url, {
+      method: "GET",
+      headers,
+      signal: options?.signal,
+    });
+
+    if (!resp.ok) {
+      return this.handleError(resp);
+    }
+
+    return await resp.json() as GetYahooQuoteResponse;
+  }
+
+  async getYahooHistory(req: GetYahooHistoryRequest, options?: MarketServiceCallOptions): Promise<GetYahooHistoryResponse> {
+    let path = "/api/market/v1/get-yahoo-history";
+    const params = new URLSearchParams();
+    if (req.symbol != null && req.symbol !== "") params.set("symbol", String(req.symbol));
+    if (req.range != null && req.range !== "") params.set("range", String(req.range));
+    if (req.interval != null && req.interval !== "") params.set("interval", String(req.interval));
+    const url = this.baseURL + path + (params.toString() ? "?" + params.toString() : "");
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      ...this.defaultHeaders,
+      ...options?.headers,
+    };
+
+    const resp = await this.fetchFn(url, {
+      method: "GET",
+      headers,
+      signal: options?.signal,
+    });
+
+    if (!resp.ok) {
+      return this.handleError(resp);
+    }
+
+    return await resp.json() as GetYahooHistoryResponse;
+  }
+
+  async searchYahooSymbols(req: SearchYahooSymbolsRequest, options?: MarketServiceCallOptions): Promise<SearchYahooSymbolsResponse> {
+    let path = "/api/market/v1/search-yahoo-symbols";
+    const params = new URLSearchParams();
+    if (req.query != null && req.query !== "") params.set("query", String(req.query));
+    const url = this.baseURL + path + (params.toString() ? "?" + params.toString() : "");
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      ...this.defaultHeaders,
+      ...options?.headers,
+    };
+
+    const resp = await this.fetchFn(url, {
+      method: "GET",
+      headers,
+      signal: options?.signal,
+    });
+
+    if (!resp.ok) {
+      return this.handleError(resp);
+    }
+
+    return await resp.json() as SearchYahooSymbolsResponse;
+  }
+
+  async listYahooTrending(req: ListYahooTrendingRequest, options?: MarketServiceCallOptions): Promise<ListYahooTrendingResponse> {
+    let path = "/api/market/v1/list-yahoo-trending";
+    const params = new URLSearchParams();
+    if (req.count != null && req.count !== 0) params.set("count", String(req.count));
+    const url = this.baseURL + path + (params.toString() ? "?" + params.toString() : "");
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      ...this.defaultHeaders,
+      ...options?.headers,
+    };
+
+    const resp = await this.fetchFn(url, {
+      method: "GET",
+      headers,
+      signal: options?.signal,
+    });
+
+    if (!resp.ok) {
+      return this.handleError(resp);
+    }
+
+    return await resp.json() as ListYahooTrendingResponse;
+  }
+
+  async getYahooOptions(req: GetYahooOptionsRequest, options?: MarketServiceCallOptions): Promise<GetYahooOptionsResponse> {
+    let path = "/api/market/v1/get-yahoo-options";
+    const params = new URLSearchParams();
+    if (req.symbol != null && req.symbol !== "") params.set("symbol", String(req.symbol));
+    if (req.expiration != null && req.expiration !== "") params.set("expiration", String(req.expiration));
+    const url = this.baseURL + path + (params.toString() ? "?" + params.toString() : "");
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      ...this.defaultHeaders,
+      ...options?.headers,
+    };
+
+    const resp = await this.fetchFn(url, {
+      method: "GET",
+      headers,
+      signal: options?.signal,
+    });
+
+    if (!resp.ok) {
+      return this.handleError(resp);
+    }
+
+    return await resp.json() as GetYahooOptionsResponse;
+  }
+
+  async getYahooProfile(req: GetYahooProfileRequest, options?: MarketServiceCallOptions): Promise<GetYahooProfileResponse> {
+    let path = "/api/market/v1/get-yahoo-profile";
+    const params = new URLSearchParams();
+    if (req.symbol != null && req.symbol !== "") params.set("symbol", String(req.symbol));
+    const url = this.baseURL + path + (params.toString() ? "?" + params.toString() : "");
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      ...this.defaultHeaders,
+      ...options?.headers,
+    };
+
+    const resp = await this.fetchFn(url, {
+      method: "GET",
+      headers,
+      signal: options?.signal,
+    });
+
+    if (!resp.ok) {
+      return this.handleError(resp);
+    }
+
+    return await resp.json() as GetYahooProfileResponse;
   }
 
   private async handleError(resp: Response): Promise<never> {

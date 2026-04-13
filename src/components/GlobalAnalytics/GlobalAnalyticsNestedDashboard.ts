@@ -4,6 +4,8 @@ import { Panel } from '../Panel';
 import { GlobalAnalyticsDashboard } from './GlobalAnalyticsDashboard';
 import { ETFFlowsPanel } from '../ETFFlowsPanel';
 import { InvestmentsPanel } from '../InvestmentsPanel';
+import { YahooFinancePanel } from './YahooFinancePanel';
+
 
 export class GlobalAnalyticsNestedDashboard extends NestedPanelLayout {
   constructor() {
@@ -28,9 +30,11 @@ export class GlobalAnalyticsNestedDashboard extends NestedPanelLayout {
 
     const etfFlowsPanel = new ETFFlowsPanel();                    
     const investmentsPanel = new InvestmentsPanel();
-    // // 4. Instantiate the News panel                     
-    // const newsPanel = new NewsPanel( );
+    // // 4. Instantiate the News panel
+    const yahooPanel = new YahooFinancePanel();
 
+
+    
     // Add some simple inline styling or content to the dummy panel
     dummyPanel.setContent(`
       <div style="padding: 16px; color: var(--text-muted); font-size: 14px;">
@@ -43,8 +47,10 @@ export class GlobalAnalyticsNestedDashboard extends NestedPanelLayout {
     // 4. Add them to the layout
     // The base class handles appending them to the DOM and making them draggable
     this.addSubPanel(analyticsPanel);
-    this.addSubPanel(dummyPanel);
-      this.addSubPanel(etfFlowsPanel);
-        this.addSubPanel(investmentsPanel);                                           
+    this.addSubPanel(yahooPanel);
+
+    // this.addSubPanel(dummyPanel);
+    this.addSubPanel(etfFlowsPanel);
+    this.addSubPanel(investmentsPanel);  
   }
 }

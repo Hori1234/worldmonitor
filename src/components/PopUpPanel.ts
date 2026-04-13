@@ -80,6 +80,7 @@ export class PopUpPanel extends Panel {
         <html>
           <head>
             <title>Popped Out: Test Panel</title>
+            <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: http: data: blob: 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'; frame-src 'self' https: http:;" />
             ${styles}
             <style>
               body { background: var(--bg); margin: 0; padding: 0; display: flex; width: 100vw; height: 100vh; }

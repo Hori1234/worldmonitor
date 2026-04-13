@@ -50,7 +50,7 @@ import { mlWorker } from '@/services/ml-worker';
 import { UnifiedSettings } from '@/components/UnifiedSettings';
 import { t } from '@/services/i18n';
 import { TvModeController } from '@/services/tv-mode';
-
+import { BrowserView } from '@/components/BrowserView/BrowserView';
 export interface EventHandlerCallbacks {
   updateSearchIndex: () => void;
   loadRadarForViewport?: () => void;
@@ -752,6 +752,65 @@ export class EventHandlerManager implements AppModule {
       headerLeft.appendChild(this.ctx.pizzintIndicator.getElement());
     }
   }
+
+    setupBrowserView(): void {
+    const headerLeft = this.ctx.container.querySelector('.header-left');
+    if (!headerLeft) return;
+
+    const browserBtn = document.createElement('button');
+    browserBtn.className = 'pizzint-toggle';
+    browserBtn.title = 'Browser';
+    browserBtn.style.cssText = 'display:flex;align-items:center;gap:4px;cursor:pointer;';
+    browserBtn.innerHTML = '<span style="font-size:14px;">🌐</span><span style="font-size:11px;color:var(--text-muted,#aaa);">Browser</span>';
+
+    let browserWindow: Window | null = null;
+
+    browserBtn.addEventListener('click', () => {
+      // If already open, focus it
+      if (browserWindow && !browserWindow.closed) {
+        browserWindow.focus();
+        return;
+      }
+
+      const screenW = window.screen.width;
+      const screenH = window.screen.height;
+      const popupW = Math.round(screenW * 0.70);
+      const popupH = Math.round(screenH * 0.75);
+      const left = Math.round((screenW - popupW) / 2);
+      const top = Math.round((screenH - popupH) / 2);
+
+      browserWindow = window.open(
+        'browser-window.html',
+        'WorldMonitorBrowser',
+        'width=' + popupW + ',height=' + popupH + ',left=' + left + ',top=' + top
+      );
+
+      if (!browserWindow) {
+        alert('Popup blocked! Please allow popups for this site.');
+        return;
+      }
+
+      browserBtn.style.background = 'rgba(37,99,235,0.2)';
+
+      // When the browser window closes, reset button state
+      const checkClosed = setInterval(() => {
+        if (browserWindow && browserWindow.closed) {
+          clearInterval(checkClosed);
+          browserWindow = null;
+          browserBtn.style.background = 'transparent';
+        }
+      }, 500);
+    });
+
+    // Insert after pizza tracker if it exists, otherwise append
+    const pizzint = headerLeft.querySelector('.pizzint-indicator');
+    if (pizzint) {
+      pizzint.after(browserBtn);
+    } else {
+      headerLeft.appendChild(browserBtn);
+    }
+  }
+
 
   setupExportPanel(): void {
     this.ctx.exportPanel = new ExportPanel(() => ({

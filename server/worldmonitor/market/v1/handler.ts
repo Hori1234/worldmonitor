@@ -22,6 +22,14 @@ import { listEtfFlows } from './list-etf-flows';
 import { getCountryStockIndex } from './get-country-stock-index';
 import { listGulfQuotes } from './list-gulf-quotes';
 
+// The Yahoo Finance RPCs are in separate modules since they share caching logic and dependencies:
+import { getYahooQuote } from './get-yahoo-quote';
+import { getYahooHistory } from './get-yahoo-history';
+import { searchYahooSymbols } from './search-yahoo-symbols';
+import { listYahooTrending } from './list-yahoo-trending';
+import { getYahooOptions } from './get-yahoo-options';
+import { getYahooProfile } from './get-yahoo-profile';
+
 export const marketHandler: MarketServiceHandler = {
   listMarketQuotes,
   listCryptoQuotes,
@@ -31,4 +39,13 @@ export const marketHandler: MarketServiceHandler = {
   listEtfFlows,
   getCountryStockIndex,
   listGulfQuotes,
+
+
+  // Yahoo Finance RPCs:
+  getYahooQuote,
+  getYahooHistory,
+  searchYahooSymbols,
+  listYahooTrending,
+  getYahooOptions,
+  getYahooProfile,
 };
