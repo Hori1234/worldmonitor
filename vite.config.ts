@@ -447,6 +447,99 @@ const RSS_PROXY_ALLOWED_DOMAINS = new Set([
   'www.sciencedaily.com', 'feeds.nature.com', 'www.livescience.com', 'www.newscientist.com',
 ]);
 
+function webProxyPlugin(): Plugin {
+  return {
+    name: 'web-proxy',
+    configureServer(server) {
+      server.middlewares.use(async (req, res, next) => {
+        if (!req.url?.startsWith('/api/web-proxy')) {
+          return next();
+        }
+
+        const url = new URL(req.url, 'http://localhost');
+        const targetUrl = url.searchParams.get('url');
+        if (!targetUrl) {
+          res.statusCode = 400;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: 'Missing url parameter' }));
+          return;
+        }
+
+        let parsed;
+        try { parsed = new URL(targetUrl); } catch {
+          res.statusCode = 400;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: 'Invalid URL' }));
+          return;
+        }
+
+        if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+          res.statusCode = 400;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: 'Only HTTP(S) allowed' }));
+          return;
+        }
+
+        if (/^(localhost|127\.|10\.|192\.168\.|0\.0\.0\.0)/i.test(parsed.hostname)) {
+          res.statusCode = 403;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: 'Private addresses not allowed' }));
+          return;
+        }
+
+        try {
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), 15000);
+
+          const upstream = await fetch(targetUrl, {
+            signal: controller.signal,
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+              'Accept-Language': 'en-US,en;q=0.9',
+            },
+            redirect: 'follow',
+          });
+          clearTimeout(timer);
+
+          // const STRIPPED = new Set(['x-frame-options', 'content-security-policy', 'content-security-policy-report-only']);
+          const STRIPPED = new Set(['x-frame-options', 'content-security-policy', 'content-security-policy-report-only', 'content-encoding', 'content-length', 'transfer-encoding']);
+          for (const [key, value] of upstream.headers.entries()) {
+            if (STRIPPED.has(key.toLowerCase())) continue;
+            if (key.toLowerCase().startsWith('access-control-')) continue;
+            try { res.setHeader(key, value); } catch { /* skip */ }
+          }
+          res.setHeader('Access-Control-Allow-Origin', '*');
+
+          const contentType = upstream.headers.get('content-type') || '';
+          if (contentType.includes('text/html')) {
+            let html = await upstream.text();
+            const baseTag = `<base href="${parsed.origin}${parsed.pathname.replace(/\/[^/]*$/, '/')}">`;
+            if (/<head[^>]*>/i.test(html)) {
+              html = html.replace(/(<head[^>]*>)/i, '$1' + baseTag);
+            } else if (/<html[^>]*>/i.test(html)) {
+              html = html.replace(/(<html[^>]*>)/i, '$1<head>' + baseTag + '</head>');
+            } else {
+              html = baseTag + html;
+            }
+            res.statusCode = upstream.status;
+            res.end(html);
+          } else {
+            res.statusCode = upstream.status;
+            const buffer = Buffer.from(await upstream.arrayBuffer());
+            res.end(buffer);
+          }
+        } catch (error: any) {
+          console.error('[web-proxy]', targetUrl, error.message);
+          res.statusCode = error.name === 'AbortError' ? 504 : 502;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: error.name === 'AbortError' ? 'Request timed out' : 'Failed to fetch URL' }));
+        }
+      });
+    },
+  };
+}
+
 function rssProxyPlugin(): Plugin {
   return {
     name: 'rss-proxy',
@@ -579,6 +672,7 @@ export default defineConfig({
     htmlVariantPlugin(),
     polymarketPlugin(),
     rssProxyPlugin(),
+    webProxyPlugin(),
     youtubeLivePlugin(),
     sebufApiPlugin(),
     brotliPrecompressPlugin(),

@@ -26,7 +26,7 @@ const MENU_FILE_SETTINGS_ID: &str = "file.settings";
 const MENU_HELP_GITHUB_ID: &str = "help.github";
 #[cfg(feature = "devtools")]
 const MENU_HELP_DEVTOOLS_ID: &str = "help.devtools";
-const TRUSTED_WINDOWS: [&str; 3] = ["main", "settings", "live-channels"];
+const TRUSTED_WINDOWS: [&str; 3] = ["main", "settings", "live-channels","browser-webview"];
 const SUPPORTED_SECRET_KEYS: [&str; 25] = [
     "GROQ_API_KEY",
     "OPENROUTER_API_KEY",
@@ -1131,6 +1131,39 @@ fn resolve_appimage_gio_module_dir() -> Option<PathBuf> {
     None
 }
 
+#[tauri::command]
+fn open_browser_webview(app: AppHandle, url: String) -> Result<(), String> {
+    if let Some(window) = app.get_webview_window("browser-webview") {
+        let _ = window.show();
+        window.set_focus().map_err(|e| format!("{e}"))?;
+        let parsed = Url::parse(&url).map_err(|e| format!("Invalid URL: {e}"))?;
+        window.navigate(parsed).map_err(|e| format!("{e}"))?;
+        return Ok(());
+    }
+
+    let parsed = Url::parse(&url).map_err(|e| format!("Invalid URL: {e}"))?;
+    let _win = WebviewWindowBuilder::new(&app, "browser-webview", WebviewUrl::External(parsed))
+        .title("World Monitor Browser")
+        .inner_size(1100.0, 750.0)
+        .resizable(true)
+        .build()
+        .map_err(|e| format!("{e}"))?;
+
+    #[cfg(not(target_os = "macos"))]
+    let _ = _win.remove_menu();
+
+    Ok(())
+}
+
+#[tauri::command]
+fn navigate_browser_webview(app: AppHandle, url: String) -> Result<(), String> {
+    let window = app.get_webview_window("browser-webview")
+        .ok_or("Browser webview not open")?;
+    let parsed = Url::parse(&url).map_err(|e| format!("Invalid URL: {e}"))?;
+    window.navigate(parsed).map_err(|e| format!("{e}"))?;
+    Ok(())
+}
+
 fn main() {
     // Work around WebKitGTK rendering issues on Linux that can cause blank white
     // screens. DMA-BUF renderer failures are common with NVIDIA drivers and on
@@ -1290,7 +1323,9 @@ fn main() {
             close_live_channels_window,
             open_url,
             open_youtube_login,
-            fetch_polymarket
+            fetch_polymarket,
+            open_browser_webview,
+            navigate_browser_webview
         ])
         .setup(|app| {
             // Load persistent cache into memory (avoids 14MB file I/O on every IPC call)

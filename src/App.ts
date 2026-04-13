@@ -262,6 +262,7 @@ export class App {
       unifiedSettings: null,
       mobileWarningModal: null,
       pizzintIndicator: null,
+      browserView: null,
       countryBriefPage: null,
       countryTimeline: null,
       positivePanel: null,
@@ -439,6 +440,7 @@ export class App {
     this.eventHandlers.setupPlaybackControl();
     this.eventHandlers.setupStatusPanel();
     this.eventHandlers.setupPizzIntIndicator();
+    this.eventHandlers.setupBrowserView();
     this.eventHandlers.setupExportPanel();
     this.eventHandlers.setupUnifiedSettings();
 
