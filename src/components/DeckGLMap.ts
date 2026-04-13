@@ -406,7 +406,7 @@ export class DeckGLMap {
     }, 150);
 
     this.debouncedFetchRadar = debounce(() => {
-      if (this.state.layers.radar) this.onViewportRadarRefresh?.();
+      if (SITE_VARIANT === 'aviation' && this.state.layers.radar) this.onViewportRadarRefresh?.();
     }, 2000);
 
     this.debouncedFetchBases = debounce(() => this.fetchServerBases(), 300);
