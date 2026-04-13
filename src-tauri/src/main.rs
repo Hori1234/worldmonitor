@@ -26,7 +26,7 @@ const MENU_FILE_SETTINGS_ID: &str = "file.settings";
 const MENU_HELP_GITHUB_ID: &str = "help.github";
 #[cfg(feature = "devtools")]
 const MENU_HELP_DEVTOOLS_ID: &str = "help.devtools";
-const TRUSTED_WINDOWS: [&str; 3] = ["main", "settings", "live-channels","browser-webview"];
+const TRUSTED_WINDOWS: [&str; 3] = ["main", "settings", "live-channels","browser-webview","browser"];
 const SUPPORTED_SECRET_KEYS: [&str; 25] = [
     "GROQ_API_KEY",
     "OPENROUTER_API_KEY",
@@ -1164,6 +1164,49 @@ fn navigate_browser_webview(app: AppHandle, url: String) -> Result<(), String> {
     Ok(())
 }
 
+#[tauri::command]
+async fn open_browser_chrome(app: AppHandle, base_url: Option<String>) -> Result<(), String> {
+    if let Some(window) = app.get_webview_window("browser") {
+        let _ = window.show();
+        window.set_focus().map_err(|e| format!("{e}"))?;
+        return Ok(());
+    }
+
+    let url = match base_url {
+        Some(ref origin) if !origin.is_empty() => {
+            let path = origin.trim_end_matches('/');
+            let full_url = format!("{}/browser-window.html", path);
+            WebviewUrl::External(Url::parse(&full_url).map_err(|_| "Invalid base URL".to_string())?)
+        }
+        _ => WebviewUrl::App("browser-window.html".into()),
+    };
+
+    let _win = WebviewWindowBuilder::new(&app, "browser", url)
+        .title("World Monitor Browser")
+        .inner_size(520.0, 750.0)
+        .min_inner_size(400.0, 500.0)
+        .resizable(true)
+        .background_color(tauri::webview::Color(26, 28, 30, 255))
+        .build()
+        .map_err(|e| format!("{e}"))?;
+
+    #[cfg(not(target_os = "macos"))]
+    let _ = _win.remove_menu();
+
+    Ok(())
+}
+
+#[tauri::command]
+fn close_browser_chrome(app: AppHandle) -> Result<(), String> {
+    if let Some(window) = app.get_webview_window("browser") {
+        window.close().map_err(|e| format!("{e}"))?;
+    }
+    if let Some(window) = app.get_webview_window("browser-webview") {
+        window.close().map_err(|e| format!("{e}"))?;
+    }
+    Ok(())
+}
+
 fn main() {
     // Work around WebKitGTK rendering issues on Linux that can cause blank white
     // screens. DMA-BUF renderer failures are common with NVIDIA drivers and on
@@ -1325,7 +1368,9 @@ fn main() {
             open_youtube_login,
             fetch_polymarket,
             open_browser_webview,
-            navigate_browser_webview
+            navigate_browser_webview,
+            open_browser_chrome,
+            close_browser_chrome
         ])
         .setup(|app| {
             // Load persistent cache into memory (avoids 14MB file I/O on every IPC call)

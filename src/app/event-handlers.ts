@@ -3,6 +3,7 @@ import type { PanelConfig } from '@/types';
 import type { MapView } from '@/components';
 import type { ClusteredEvent } from '@/types';
 import type { DashboardSnapshot } from '@/services/storage';
+import { isDesktopRuntime } from '@/services/runtime';
 import {
   PlaybackControl,
   StatusPanel,
@@ -50,7 +51,7 @@ import { mlWorker } from '@/services/ml-worker';
 import { UnifiedSettings } from '@/components/UnifiedSettings';
 import { t } from '@/services/i18n';
 import { TvModeController } from '@/services/tv-mode';
-import { BrowserView } from '@/components/BrowserView/BrowserView';
+
 export interface EventHandlerCallbacks {
   updateSearchIndex: () => void;
   loadRadarForViewport?: () => void;
@@ -765,44 +766,48 @@ export class EventHandlerManager implements AppModule {
 
     let browserWindow: Window | null = null;
 
-    browserBtn.addEventListener('click', () => {
-      // If already open, focus it
+    browserBtn.addEventListener('click', async () => {
+      if (isDesktopRuntime()) {
+        try {
+          const baseUrl = window.location.origin;
+          await invokeTauri<void>('open_browser_chrome', { baseUrl });
+          browserBtn.style.background = 'rgba(37,99,235,0.2)';
+        } catch (err) {
+          console.warn('[browser] Tauri open_browser_chrome failed, falling back to popup:', err);
+          openPopup();
+        }
+        return;
+      }
+      openPopup();
+    });
+
+    function openPopup() {
       if (browserWindow && !browserWindow.closed) {
         browserWindow.focus();
         return;
       }
-
-      const screenW = window.screen.width;
-      const screenH = window.screen.height;
-      const popupW = Math.round(screenW * 0.70);
-      const popupH = Math.round(screenH * 0.75);
-      const left = Math.round((screenW - popupW) / 2);
-      const top = Math.round((screenH - popupH) / 2);
-
+      const sw = window.screen.width;
+      const sh = window.screen.height;
+      const pw = Math.round(sw * 0.70);
+      const ph = Math.round(sh * 0.75);
+      const left = Math.round((sw - pw) / 2);
+      const top = Math.round((sh - ph) / 2);
       browserWindow = window.open(
         'browser-window.html',
         'WorldMonitorBrowser',
-        'width=' + popupW + ',height=' + popupH + ',left=' + left + ',top=' + top
+        'width=' + pw + ',height=' + ph + ',left=' + left + ',top=' + top
       );
-
-      if (!browserWindow) {
-        alert('Popup blocked! Please allow popups for this site.');
-        return;
-      }
-
+      if (!browserWindow) return;
       browserBtn.style.background = 'rgba(37,99,235,0.2)';
-
-      // When the browser window closes, reset button state
-      const checkClosed = setInterval(() => {
+      const check = setInterval(() => {
         if (browserWindow && browserWindow.closed) {
-          clearInterval(checkClosed);
+          clearInterval(check);
           browserWindow = null;
           browserBtn.style.background = 'transparent';
         }
       }, 500);
-    });
+    }
 
-    // Insert after pizza tracker if it exists, otherwise append
     const pizzint = headerLeft.querySelector('.pizzint-indicator');
     if (pizzint) {
       pizzint.after(browserBtn);
