@@ -1,5 +1,7 @@
 import { getCorsHeaders, isDisallowedOrigin } from './_cors.js';
 import { checkRateLimit } from './_rate-limit.js';
+import axios from 'axios';
+import * as cheerio from 'cheerio';
 
 export const config = { runtime: 'edge' };
 
@@ -17,6 +19,68 @@ const STRIPPED_HEADERS = new Set([
   'content-length',
   'transfer-encoding',
 ]);
+
+// Source - https://stackoverflow.com/a/79445730
+// Posted by GTK, License - CC BY-SA 4.0
+// Adapted for edge runtime (no axios/cheerio/DOMParser)
+async function getGoogleNewsUrl(rssUrl) {
+    try {
+        // 1. Fetch the initial RSS article page
+        const { data: html } = await axios.get(rssUrl, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36'
+            }
+        });
+
+        // 2. Parse HTML to find the data-p attribute
+        const $ = cheerio.load(html);
+        const dataP = $('c-wiz[data-p]').attr('data-p');
+
+        if (!dataP) {
+            throw new Error("Could not find the required data-p attribute.");
+        }
+
+        // 3. Clean and parse the inner JSON object
+        const cleanedData = dataP.replace('%.@.', '["garturlreq",');
+        const obj = JSON.parse(cleanedData);
+
+        // 4. Construct the BatchExecute payload
+        // We slice the array similar to Python's obj[:-6] + obj[-2:]
+        const processedObj = [...obj.slice(0, -6), ...obj.slice(-2)];
+        
+        const payload = new URLSearchParams();
+        const innerReq = [['Fbv4je', JSON.stringify(processedObj), 'null', 'generic']];
+        payload.append('f.req', JSON.stringify([innerReq]));
+
+        // 5. POST to the BatchExecute endpoint
+        const batchUrl = "https://news.google.com/_/DotsSplashUi/data/batchexecute";
+        const response = await axios.post(batchUrl, payload.toString(), {
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36',
+            }
+        });
+
+        // 6. Extract the final URL from the nested JSON response
+        const rawText = response.data.replace(")]}'\n", "");
+        const parsedBatch = JSON.parse(rawText);
+        const arrayString = parsedBatch[0][2];
+        const articleUrl = JSON.parse(arrayString)[1];
+
+        return articleUrl;
+
+    } catch (error) {
+        console.error("Error decoding Google News URL:", error);
+        return null;
+    }
+}
+
+function isGoogleNewsArticle(url) {
+  try {
+    const u = new URL(url);
+    return u.hostname === 'news.google.com' && /\/(?:rss\/)?articles\//.test(u.pathname);
+  } catch { return false; }
+}
 
 export default async function handler(req) {
   const corsHeaders = getCorsHeaders(req, 'GET, OPTIONS');
@@ -36,11 +100,21 @@ export default async function handler(req) {
   const rateLimitResponse = await checkRateLimit(req, corsHeaders);
   if (rateLimitResponse) return rateLimitResponse;
 
-  const targetUrl = new URL(req.url).searchParams.get('url');
+  let targetUrl = new URL(req.url).searchParams.get('url');
   if (!targetUrl) {
     return new Response(JSON.stringify({ error: 'Missing url parameter' }), {
       status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders },
     });
+  }
+
+  console.log('Received URL to proxy:', targetUrl);
+  // Resolve Google News redirect URLs to actual article URLs
+  if (isGoogleNewsArticle(targetUrl)) {
+    try {
+      const resolved = await getGoogleNewsUrl(targetUrl)
+      console.log('Resolved Google News URL:', resolved);
+      if (resolved) targetUrl = resolved;
+    } catch { /* continue with original URL */ }
   }
 
   let parsed;
@@ -87,8 +161,11 @@ export default async function handler(req) {
     const contentType = upstream.headers.get('content-type') || '';
     if (contentType.includes('text/html')) {
       let html = await upstream.text();
-      // Inject <base> so relative URLs resolve against the original domain
-      const baseTag = '<base href="' + parsed.origin + parsed.pathname.replace(/\/[^/]*$/, '/') + '">';
+      let baseParsed = parsed;
+      if (upstream.url) {
+        try { baseParsed = new URL(upstream.url); } catch { /* keep original */ }
+      }
+      const baseTag = '<base href="' + baseParsed.origin + baseParsed.pathname.replace(/\/[^/]*$/, '/') + '">';
       if (/<head[^>]*>/i.test(html)) {
         html = html.replace(/(<head[^>]*>)/i, '$1' + baseTag);
       } else if (/<html[^>]*>/i.test(html)) {

@@ -18,6 +18,8 @@ const FEED_SCOPE_SEPARATOR = '::';
 const feedFailures = new Map<string, { count: number; cooldownUntil: number }>();
 const feedCache = new Map<string, { items: NewsItem[]; timestamp: number }>();
 const CACHE_TTL = 30 * 60 * 1000;
+const PER_FEED_ITEM_LIMIT = 50;
+const TOTAL_ITEM_LIMIT = 50;
 
 function toSerializable(items: NewsItem[]): Array<Omit<NewsItem, 'pubDate'> & { pubDate: string }> {
   return items.map(item => ({ ...item, pubDate: item.pubDate.toISOString() }));
@@ -38,6 +40,66 @@ function parseFeedScope(feedScope: string): { feedName: string; lang: string } {
     feedName: feedScope.slice(0, splitIndex),
     lang: feedScope.slice(splitIndex + FEED_SCOPE_SEPARATOR.length),
   };
+}
+
+// Add after line 12 (after the last import)
+
+/**
+ * Google News RSS <link> elements are redirect URLs like:
+ *   https://news.google.com/rss/articles/CBMi...
+ * The article ID is a base64url-encoded protobuf containing the real URL.
+ * This function extracts it so the browser loads the article directly.
+ */
+// Follow redirect chain manually to resolve Google News article URLs
+async function resolveGoogleNewsUrl(googleUrl: string) {
+  const MAX_REDIRECTS = 10;
+  let url = googleUrl;
+
+  for (let i = 0; i < MAX_REDIRECTS; i++) {
+    const resp = await fetch(url, {
+      redirect: 'manual',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+      },
+    });
+
+    const location = resp.headers.get('location');
+    if (!location) {
+      // No more redirects — check if the HTML has a meta refresh or JS redirect
+      if (resp.headers.get('content-type')?.includes('text/html')) {
+        const html = await resp.text();
+        // meta refresh: <meta http-equiv="refresh" content="0;url=...">
+        const metaMatch = html.match(/http-equiv=["']?refresh["']?\s+content=["'][^"']*url=([^"'\s>]+)/i);
+        if (metaMatch?.[1]) {
+          url = metaMatch[1];
+          continue;
+        }
+        // JS redirect: window.location = "..." or location.href = "..."
+        const jsMatch = html.match(/(?:window\.)?location(?:\.href)?\s*=\s*["']([^"']+)["']/);
+        if (jsMatch?.[1]) {
+          url = jsMatch[1];
+          continue;
+        }
+      }
+      break;
+    }
+
+    // Resolve relative redirects
+    try {
+      url = new URL(location, url).href;
+    } catch {
+      url = location;
+    }
+
+    // If we've left news.google.com, we found the real URL
+    const parsed = new URL(url);
+    if (parsed.hostname !== 'news.google.com') return url;
+  }
+
+  // Return whatever we ended up at (even if still google)
+  return url !== googleUrl ? url : null;
 }
 
 function getPersistentFeedKey(feedScope: string): string {
@@ -239,7 +301,7 @@ export async function fetchFeed(feed: Feed): Promise<NewsItem[]> {
     if (isAtom) items = doc.querySelectorAll('entry');
 
     const parsed = Array.from(items)
-      .slice(0, 5)
+      .slice(0, PER_FEED_ITEM_LIMIT)
       .map((item) => {
         const title = item.querySelector('title')?.textContent || '';
         let link = '';
@@ -248,6 +310,7 @@ export async function fetchFeed(feed: Feed): Promise<NewsItem[]> {
           link = linkEl?.getAttribute('href') || '';
         } else {
           link = item.querySelector('link')?.textContent || '';
+          // link = resolveGoogleNewsUrl(item.querySelector('link')?.textContent || '');
         }
 
         const pubDateStr = isAtom
@@ -324,7 +387,7 @@ export async function fetchCategoryFeeds(
     onBatch?: (items: NewsItem[]) => void;
   } = {}
 ): Promise<NewsItem[]> {
-  const topLimit = 20;
+  const topLimit = TOTAL_ITEM_LIMIT;
   const batchSize = options.batchSize ?? 5;
   const currentLang = getCurrentLanguage();
 

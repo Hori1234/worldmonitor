@@ -447,6 +447,67 @@ const RSS_PROXY_ALLOWED_DOMAINS = new Set([
   'www.sciencedaily.com', 'feeds.nature.com', 'www.livescience.com', 'www.newscientist.com',
 ]);
 
+const BROWSER_UA_PROXY = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36';
+
+function unwrapDdgRedirect(url: string): string {
+  try {
+    const u = new URL(url);
+    if (u.hostname === 'duckduckgo.com' && u.pathname === '/l/' && u.searchParams.has('uddg')) {
+      return u.searchParams.get('uddg')!;
+    }
+  } catch { /* not a valid URL */ }
+  return url;
+}
+
+// Source - https://stackoverflow.com/a/79388987
+// Posted by GTK, License - CC BY-SA 4.0
+async function resolveGoogleNewsUrl(url: string): Promise<string | null> {
+  try {
+    const u = new URL(url);
+    if (u.hostname !== 'news.google.com' || !/\/(?:rss\/)?articles\//.test(u.pathname)) return null;
+
+    const pageResp = await fetch(url, {
+      headers: { 'User-Agent': BROWSER_UA_PROXY },
+      redirect: 'follow',
+    });
+    const html = await pageResp.text();
+
+    const match = html.match(/data-p="([^"]+)"/);
+    if (!match) return null;
+
+    const dataP = match[1]
+      .replace(/&quot;/g, '"')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&#39;/g, "'");
+
+    const obj = JSON.parse(dataP.replace('%.@.', '["garturlreq",'));
+    const trimmed = [...obj.slice(0, obj.length - 6), ...obj.slice(obj.length - 2)];
+
+    const innerPayload = JSON.stringify([[['Fbv4je', JSON.stringify(trimmed), 'null', 'generic']]]);
+    const body = 'f.req=' + encodeURIComponent(innerPayload);
+
+    const batchResp = await fetch(
+      'https://news.google.com/_/DotsSplashUi/data/batchexecute',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+          'User-Agent': BROWSER_UA_PROXY,
+        },
+        body,
+      },
+    );
+    const raw = await batchResp.text();
+    const cleaned = raw.replace(")]}'", '');
+    const arr = JSON.parse(cleaned);
+    const articleUrl = JSON.parse(arr[0][2])[1];
+    if (articleUrl && typeof articleUrl === 'string' && articleUrl.startsWith('http')) return articleUrl;
+  } catch { /* resolution failed */ }
+  return null;
+}
+
 function webProxyPlugin(): Plugin {
   return {
     name: 'web-proxy',
@@ -457,13 +518,22 @@ function webProxyPlugin(): Plugin {
         }
 
         const url = new URL(req.url, 'http://localhost');
-        const targetUrl = url.searchParams.get('url');
+        let targetUrl = url.searchParams.get('url');
         if (!targetUrl) {
           res.statusCode = 400;
           res.setHeader('Content-Type', 'application/json');
           res.end(JSON.stringify({ error: 'Missing url parameter' }));
           return;
         }
+
+        // Unwrap DuckDuckGo redirect links
+        targetUrl = unwrapDdgRedirect(targetUrl);
+
+        // Resolve Google News redirect URLs to actual article URLs
+        try {
+          const resolved = await resolveGoogleNewsUrl(targetUrl);
+          if (resolved) targetUrl = resolved;
+        } catch { /* continue with original */ }
 
         let parsed;
         try { parsed = new URL(targetUrl); } catch {
