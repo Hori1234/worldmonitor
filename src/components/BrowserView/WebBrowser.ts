@@ -13,7 +13,7 @@ const WB_STYLES = [
   '.wb-card{background:var(--surface,#141414);border:1px solid var(--border,#2a2a2a);border-radius:6px;padding:12px 14px;cursor:pointer;transition:border-color .15s,background .15s;display:flex;flex-direction:column;gap:8px}',
   '.wb-card:hover{border-color:var(--border-strong,#444);background:var(--surface-hover,#1e1e1e)}',
   '.wb-card-head{display:flex;align-items:center;justify-content:space-between;gap:8px}',
-  '.wb-card-source{font-size:10px;color:var(--text-dim,#888);font-weight:500;letter-spacing:.03em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:55%}',
+  '.wb-card-source{font-size:10px;color:var(--text-dim,#888);font-weight:500;letter-spacing:.03em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}',
   '.wb-card-time{font-size:10px;color:var(--text-ghost,#555);flex-shrink:0}',
   '.wb-card-title{font-size:12px;color:var(--text,#e8e8e8);line-height:1.5;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}',
   '.wb-card-loc{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-dim,#888)}',
@@ -45,6 +45,11 @@ const WB_STYLES = [
   '.wb-badge{display:inline-block;font-size:9px;padding:1px 5px;border-radius:3px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}',
   '.wb-badge.critical{background:rgba(220,38,38,.2);color:#fca5a5}',
   '.wb-badge.high{background:rgba(217,119,6,.2);color:#fde68a}',
+  '.wb-panel-header{font-size:16px;font-weight:600;color:var(--text,#e8e8e8);padding-bottom:12px;border-bottom:1px solid var(--border,#2a2a2a);margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}',
+  '.wb-panel-header .wb-article-count{font-size:11px;font-weight:400;color:var(--text-muted,#666)}',
+  '.wb-card-title{font-size:12px;color:var(--text,#e8e8e8);line-height:1.5;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer;width:100%}',
+  '.wb-card-title:hover{text-decoration:underline}',
+  '.wb-card-time{font-size:10px;color:var(--accent-muted,#60a5fa);flex-shrink:0;font-weight:500}',
 ].join('\n');
 
 function injectStyles(): void {

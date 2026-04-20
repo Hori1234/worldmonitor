@@ -8,7 +8,28 @@ export class BrowserView {
 
   constructor() {
     this.element = document.createElement('div');
-    this.element.style.cssText = 'display:flex;flex-direction:row;width:100%;height:100%;overflow:hidden;background:var(--bg,#111);';
+    this.element.style.cssText = 'display:flex;flex-direction:column;width:100%;height:100%;overflow:hidden;background:var(--bg,#111);';
+
+    // ── Header ──
+    const header = document.createElement('div');
+    header.style.cssText =
+      'display:flex;align-items:center;justify-content:space-between;padding:10px 16px;' +
+      'background:var(--bg-secondary,#0a0a0a);border-bottom:1px solid var(--border,#2a2a2a);flex-shrink:0;';
+
+    const titleWrap = document.createElement('div');
+    titleWrap.style.cssText = 'display:flex;align-items:center;gap:8px;';
+    const icon = document.createElement('span');
+    icon.textContent = '\uD83C\uDF10';
+    icon.style.fontSize = '16px';
+    const title = document.createElement('span');
+    title.textContent = 'News Search';
+    title.style.cssText = 'font-size:14px;font-weight:600;color:var(--text,#e8e8e8);letter-spacing:.02em;';
+    titleWrap.append(icon, title);
+    header.appendChild(titleWrap);
+
+    // ── Body (sidebar + browser) ──
+    const body = document.createElement('div');
+    body.style.cssText = 'display:flex;flex-direction:row;flex:1;overflow:hidden;';
 
     this.webBrowser = new WebBrowser();
 
@@ -23,6 +44,7 @@ export class BrowserView {
     sidebarEl.style.height = '100%';
     sidebarEl.style.borderRight = '1px solid var(--border,#333)';
     sidebarEl.style.flexShrink = '0';
+    sidebarEl.style.paddingRight = '4px';
 
     const browserEl = this.webBrowser.getElement();
     browserEl.style.flex = '1';
@@ -64,7 +86,8 @@ export class BrowserView {
       document.addEventListener('mouseup', onMouseUp);
     });
 
-    this.element.append(sidebarEl, handle, browserEl);
+    body.append(sidebarEl, handle, browserEl);
+    this.element.append(header, body);
   }
 
   public getElement(): HTMLElement { return this.element; }

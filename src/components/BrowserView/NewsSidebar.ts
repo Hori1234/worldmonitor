@@ -25,6 +25,13 @@ const COUNTRY_NEWS_MAP: Record<string, { region: string; lang: string; name: str
   ZA: { region: 'ZA', lang: 'en', name: 'South Africa' },
 };
 
+/** Google News topic IDs for Hot Topics */
+const HOT_TOPICS_SECTIONS = [
+  { id: 'CAAqJggKIiBDQkFTRWdvSUwyMHZNRGRqTVhZU0FtVnVHZ0pWVXlnQVAB', label: 'World' },
+  { id: 'CAAqJggKIiBDQkFTRWdvSUwyMHZNRGx1YlY4U0FtVnVHZ0pWVXlnQVAB', label: 'Science' },
+  { id: 'CAAqJggKIiBDQkFTRWdvSUwyMHZNRGRqTVhZU0FtVnVHZ0pWVXlnQVAB', label: 'Technology' },
+];
+
 interface NewsItem {
   title: string;
   link: string;
@@ -32,15 +39,21 @@ interface NewsItem {
   pubDate: string;
 }
 
+type SidebarTab = 'local' | 'hot';
+
 export class NewsSidebar extends Panel {
-  private newsItems: NewsItem[] = [];
+  private localItems: NewsItem[] = [];
+  private hotItems: NewsItem[] = [];
   private countryCode = 'XX';
   private countryName = 'Unknown';
   private refreshInterval: ReturnType<typeof setInterval> | null = null;
   private onNavigate: ((url: string) => void) | null = null;
+  private activeTab: SidebarTab = 'local';
+  private tabBar: HTMLElement;
+  private listContainer: HTMLElement;
 
   constructor(navigateCb?: (url: string) => void) {
-    super({ id: 'browser-news-sidebar', title: 'Local News' });
+    super({ id: 'browser-news-sidebar', title: 'News' });
     this.onNavigate = navigateCb ?? null;
 
     const el = this.getElement();
@@ -49,38 +62,94 @@ export class NewsSidebar extends Panel {
     el.style.display = 'flex';
     el.style.flexDirection = 'column';
 
-    this.content.style.overflowY = 'auto';
+    this.content.style.overflowY = 'hidden';
     this.content.style.flex = '1';
     this.content.style.padding = '0';
+    this.content.style.display = 'flex';
+    this.content.style.flexDirection = 'column';
+
+    // ── Tab bar ──
+    this.tabBar = document.createElement('div');
+    this.tabBar.style.cssText =
+      'display:flex;border-bottom:1px solid var(--border,#2a2a2a);flex-shrink:0;background:var(--bg-secondary,#0a0a0a);';
+    this.content.appendChild(this.tabBar);
+
+    // ── Scrollable list area ──
+    this.listContainer = document.createElement('div');
+    this.listContainer.style.cssText = 'flex:1;overflow-y:auto;';
+    this.content.appendChild(this.listContainer);
 
     this.detectCountryAndLoad();
-    this.refreshInterval = setInterval(() => this.fetchNews(), 5 * 60 * 1000);
+    this.refreshInterval = setInterval(() => {
+      this.fetchLocalNews();
+      this.fetchHotTopics();
+    }, 5 * 60 * 1000);
+  }
+
+  private renderTabBar(): void {
+    this.tabBar.innerHTML = '';
+
+    const localTab = this.makeTab(this.countryName, 'local');
+    const hotTab = this.makeTab('Hot Topics', 'hot');
+
+    this.tabBar.append(localTab, hotTab);
+  }
+
+  private makeTab(label: string, tab: SidebarTab): HTMLElement {
+    const el = document.createElement('div');
+    const isActive = tab === this.activeTab;
+    el.style.cssText =
+      'flex:1;text-align:center;padding:8px 12px;font-size:12px;cursor:pointer;' +
+      'font-weight:' + (isActive ? '600' : '400') + ';' +
+      'color:' + (isActive ? 'var(--text,#e8e8e8)' : 'var(--text-muted,#666)') + ';' +
+      'border-bottom:2px solid ' + (isActive ? 'var(--accent,#60a5fa)' : 'transparent') + ';' +
+      'transition:color .12s,border-color .12s;letter-spacing:.02em;user-select:none;';
+    el.textContent = label;
+    el.addEventListener('mouseenter', () => {
+      if (tab !== this.activeTab) el.style.color = 'var(--text-secondary,#ccc)';
+    });
+    el.addEventListener('mouseleave', () => {
+      if (tab !== this.activeTab) el.style.color = 'var(--text-muted,#666)';
+    });
+    el.addEventListener('click', () => {
+      if (tab === this.activeTab) return;
+      this.activeTab = tab;
+      this.renderTabBar();
+      this.renderActiveList();
+    });
+    return el;
   }
 
   private async detectCountryAndLoad(): Promise<void> {
     try {
-      const resp = await fetch('/api/geo');
+      const resp = await fetch('https://ipapi.co/json/');
       if (resp.ok) {
         const data = await resp.json();
-        this.countryCode = data.country || 'XX';
+        this.countryCode = data.country_code || 'XX';
+        this.countryName = data.country_name || this.countryCode;
       }
     } catch {
       this.countryCode = 'XX';
+      this.countryName = 'Unknown';
     }
 
-    const mapping = COUNTRY_NEWS_MAP[this.countryCode];
-    this.countryName = mapping?.name ?? this.countryCode;
+    // Fallback: if ipapi didn't return a name, use the map
+    if (this.countryName === this.countryCode || this.countryName === 'Unknown') {
+      const mapping = COUNTRY_NEWS_MAP[this.countryCode];
+      this.countryName = mapping?.name ?? this.countryCode;
+    }
 
-    const titleEl = this.getElement().querySelector('.panel-title');
+    const titleEl = this.getElement().querySelector('.panel-title') as HTMLElement;
     if (titleEl) {
-      titleEl.textContent = 'News \u2014 ' + this.countryName;
+      titleEl.textContent = 'News';
     }
 
-    await this.fetchNews();
+    this.renderTabBar();
+    await Promise.all([this.fetchLocalNews(), this.fetchHotTopics()]);
   }
 
-  private async fetchNews(): Promise<void> {
-    this.showLoading();
+  private async fetchLocalNews(): Promise<void> {
+    if (this.activeTab === 'local') this.showListLoading();
 
     const mapping = COUNTRY_NEWS_MAP[this.countryCode] ?? { region: 'US', lang: 'en', name: 'World' };
     const gnewsUrl = 'https://news.google.com/rss?hl=' + mapping.lang + '&gl=' + mapping.region + '&ceid=' + mapping.region + ':' + mapping.lang;
@@ -91,12 +160,36 @@ export class NewsSidebar extends Panel {
       if (!resp.ok) throw new Error('RSS fetch failed: ' + resp.status);
 
       const text = await resp.text();
-      this.newsItems = this.parseRss(text);
-      this.renderNewsList();
+      this.localItems = this.parseRss(text);
     } catch (err) {
-      console.warn('[NewsSidebar] Failed to fetch news:', err);
-      this.showError('Failed to load news');
+      console.warn('[NewsSidebar] Failed to fetch local news:', err);
+      this.localItems = [];
     }
+
+    if (this.activeTab === 'local') this.renderActiveList();
+  }
+
+  private async fetchHotTopics(): Promise<void> {
+    if (this.activeTab === 'hot') this.showListLoading();
+
+    const allItems: NewsItem[] = [];
+
+    // Fetch world headlines as "hot topics"
+    const hotUrl = 'https://news.google.com/rss?hl=en&gl=US&ceid=US:en&topic=h';
+
+    try {
+      const proxyUrl = '/api/rss-proxy?url=' + encodeURIComponent(hotUrl);
+      const resp = await fetch(proxyUrl);
+      if (resp.ok) {
+        const text = await resp.text();
+        allItems.push(...this.parseRss(text));
+      }
+    } catch (err) {
+      console.warn('[NewsSidebar] Failed to fetch hot topics:', err);
+    }
+
+    this.hotItems = allItems.slice(0, 50);
+    if (this.activeTab === 'hot') this.renderActiveList();
   }
 
   private parseRss(xml: string): NewsItem[] {
@@ -119,25 +212,27 @@ export class NewsSidebar extends Panel {
     return results;
   }
 
-  private renderNewsList(): void {
-    this.content.innerHTML = '';
+  private renderActiveList(): void {
+    const items = this.activeTab === 'local' ? this.localItems : this.hotItems;
+    this.listContainer.innerHTML = '';
 
-    if (this.newsItems.length === 0) {
+    if (items.length === 0) {
       const empty = document.createElement('div');
-      empty.style.cssText = 'padding:16px;color:var(--text-muted);text-align:center;';
-      empty.textContent = 'No news available for ' + this.countryName;
-      this.content.appendChild(empty);
+      empty.style.cssText = 'padding:16px;color:var(--text-muted);text-align:center;font-size:12px;';
+      empty.textContent = this.activeTab === 'local'
+        ? 'No news available for ' + this.countryName
+        : 'No hot topics available';
+      this.listContainer.appendChild(empty);
       return;
     }
 
     const list = document.createElement('div');
-    list.className = 'news-sidebar-list';
     list.style.cssText = 'display:flex;flex-direction:column;';
 
-    for (const item of this.newsItems) {
+    for (const item of items) {
       const row = document.createElement('div');
-      row.className = 'news-sidebar-item';
-      row.style.cssText = 'padding:10px 12px;border-bottom:1px solid var(--border,#333);cursor:pointer;transition:background 0.15s;';
+      row.style.cssText =
+        'padding:10px 12px;border-bottom:1px solid var(--border,#2a2a2a);cursor:pointer;transition:background 0.15s;';
 
       row.addEventListener('mouseenter', () => { row.style.background = 'var(--bg-hover,rgba(255,255,255,0.05))'; });
       row.addEventListener('mouseleave', () => { row.style.background = 'transparent'; });
@@ -153,23 +248,30 @@ export class NewsSidebar extends Panel {
       sourceSpan.textContent = item.source;
 
       const timeSpan = document.createElement('span');
+      timeSpan.style.color = 'var(--accent-muted,#60a5fa)';
       timeSpan.textContent = this.formatTime(item.pubDate);
 
-      metaEl.appendChild(sourceSpan);
-      metaEl.appendChild(timeSpan);
-      row.appendChild(titleEl);
-      row.appendChild(metaEl);
+      metaEl.append(sourceSpan, timeSpan);
+      row.append(titleEl, metaEl);
 
       row.addEventListener('click', () => {
-        if (this.onNavigate) {
-          this.onNavigate(item.link);
-        }
+        if (this.onNavigate) this.onNavigate(item.link);
       });
 
       list.appendChild(row);
     }
 
-    this.content.appendChild(list);
+    this.listContainer.appendChild(list);
+  }
+
+  private showListLoading(): void {
+    this.listContainer.innerHTML = '';
+    const loader = document.createElement('div');
+    loader.style.cssText =
+      'display:flex;align-items:center;justify-content:center;height:80px;' +
+      'color:var(--text-muted,#666);font-size:12px;';
+    loader.textContent = 'Loading\u2026';
+    this.listContainer.appendChild(loader);
   }
 
   private formatTime(dateStr: string): string {
