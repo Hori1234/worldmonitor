@@ -19,6 +19,8 @@ export const TIER1_COUNTRIES: Record<string, string> = {
   IL: 'Israel', TW: 'Taiwan', KP: 'North Korea', SA: 'Saudi Arabia', TR: 'Turkey',
   PL: 'Poland', DE: 'Germany', FR: 'France', GB: 'United Kingdom', IN: 'India',
   PK: 'Pakistan', SY: 'Syria', YE: 'Yemen', MM: 'Myanmar', VE: 'Venezuela',
+  RO: 'Romania', BY: 'Belarus', KZ: 'Kazakhstan', NG: 'Nigeria', BD: 'Bangladesh',
+  NL: 'Netherlands', ES: 'Spain', IT: 'Italy', CA: 'Canada', AU: 'Australia',
 };
 
 // ========================================================================

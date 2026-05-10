@@ -1207,6 +1207,27 @@ fn close_browser_chrome(app: AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+#[tauri::command]
+fn minimize_browser_chrome(app: AppHandle) -> Result<(), String> {
+    if let Some(window) = app.get_webview_window("browser") {
+        window.minimize().map_err(|e| format!("{e}"))?;
+    }
+    Ok(())
+}
+
+#[tauri::command]
+fn toggle_maximize_browser_chrome(app: AppHandle) -> Result<(), String> {
+    if let Some(window) = app.get_webview_window("browser") {
+        let maximized = window.is_maximized().map_err(|e| format!("{e}"))?;
+        if maximized {
+            window.unmaximize().map_err(|e| format!("{e}"))?;
+        } else {
+            window.maximize().map_err(|e| format!("{e}"))?;
+        }
+    }
+    Ok(())
+}
+
 fn main() {
     // Work around WebKitGTK rendering issues on Linux that can cause blank white
     // screens. DMA-BUF renderer failures are common with NVIDIA drivers and on
@@ -1370,7 +1391,9 @@ fn main() {
             open_browser_webview,
             navigate_browser_webview,
             open_browser_chrome,
-            close_browser_chrome
+            close_browser_chrome,
+            minimize_browser_chrome,
+            toggle_maximize_browser_chrome
         ])
         .setup(|app| {
             // Load persistent cache into memory (avoids 14MB file I/O on every IPC call)

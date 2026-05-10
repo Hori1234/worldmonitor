@@ -157,8 +157,8 @@ export class WebBrowser {
     this.viewportContainer = document.createElement('div');
     this.viewportContainer.style.cssText = 'flex:1;position:relative;overflow:hidden;background:var(--bg,#0a0a0a);';
 
+    this.navBar.style.display = 'none';
     this.searchContainer.append(this.tabBar, this.navBar, this.viewportContainer);
-
     /* ── Assemble ── */
     this.element.append(this.modeTabBar, this.modeContentArea);
 

@@ -1,5 +1,6 @@
 import { NewsSidebar } from './NewsSidebar';
 import { WebBrowser } from './WebBrowser';
+import { hasTauriInvokeBridge, invokeTauri } from '@/services/tauri-bridge';
 
 export class BrowserView {
   private newsSidebar: NewsSidebar;
@@ -9,6 +10,67 @@ export class BrowserView {
   constructor() {
     this.element = document.createElement('div');
     this.element.style.cssText = 'display:flex;flex-direction:column;width:100%;height:100%;overflow:hidden;background:var(--bg,#111);';
+
+    // ── Custom titlebar (window controls) ──
+    const titlebar = document.createElement('div');
+    titlebar.style.cssText =
+      'display:flex;align-items:center;justify-content:space-between;padding:0 8px;height:32px;' +
+      'background:var(--bg-secondary,#0a0a0a);border-bottom:1px solid var(--border,#2a2a2a);' +
+      'flex-shrink:0;user-select:none;-webkit-user-select:none;';
+    titlebar.setAttribute('data-tauri-drag-region', '');
+
+    const tbTitle = document.createElement('span');
+    tbTitle.textContent = 'World Monitor Browser';
+    tbTitle.style.cssText = 'font-size:11px;color:var(--text-muted,#666);letter-spacing:.04em;pointer-events:none;';
+
+    const winControls = document.createElement('div');
+    winControls.style.cssText = 'display:flex;align-items:center;gap:2px;';
+
+    const btnBase =
+      'width:28px;height:22px;border:none;border-radius:4px;background:transparent;' +
+      'color:var(--text-dim,#888);cursor:pointer;font-size:14px;display:flex;align-items:center;' +
+      'justify-content:center;transition:background .12s,color .12s;';
+
+    const minBtn = document.createElement('button');
+    minBtn.title = 'Minimize';
+    minBtn.innerHTML = '&#x2212;';
+    minBtn.style.cssText = btnBase;
+    minBtn.addEventListener('mouseenter', () => { minBtn.style.background = 'rgba(255,255,255,0.08)'; minBtn.style.color = '#e8e8e8'; });
+    minBtn.addEventListener('mouseleave', () => { minBtn.style.background = 'transparent'; minBtn.style.color = 'var(--text-dim,#888)'; });
+    minBtn.addEventListener('click', () => {
+      if (hasTauriInvokeBridge()) invokeTauri('minimize_browser_chrome').catch(() => {});
+    });
+
+    const maxBtn = document.createElement('button');
+    maxBtn.title = 'Maximize / Restore';
+    maxBtn.innerHTML = '&#x25A1;';
+    maxBtn.style.cssText = btnBase;
+    maxBtn.addEventListener('mouseenter', () => { maxBtn.style.background = 'rgba(255,255,255,0.08)'; maxBtn.style.color = '#e8e8e8'; });
+    maxBtn.addEventListener('mouseleave', () => { maxBtn.style.background = 'transparent'; maxBtn.style.color = 'var(--text-dim,#888)'; });
+    maxBtn.addEventListener('click', () => {
+      if (hasTauriInvokeBridge()) {
+        invokeTauri('toggle_maximize_browser_chrome').catch(() => {});
+      } else {
+        if (window.outerWidth < screen.availWidth || window.outerHeight < screen.availHeight) {
+          window.moveTo(0, 0);
+          window.resizeTo(screen.availWidth, screen.availHeight);
+        }
+      }
+    });
+
+    const closeBtn = document.createElement('button');
+    closeBtn.title = 'Close';
+    closeBtn.innerHTML = '&#x2715;';
+    closeBtn.style.cssText = btnBase;
+    closeBtn.addEventListener('mouseenter', () => { closeBtn.style.background = 'rgba(220,38,38,0.75)'; closeBtn.style.color = '#fff'; });
+    closeBtn.addEventListener('mouseleave', () => { closeBtn.style.background = 'transparent'; closeBtn.style.color = 'var(--text-dim,#888)'; });
+    closeBtn.addEventListener('click', () => {
+      if (hasTauriInvokeBridge()) invokeTauri('close_browser_chrome').catch(() => {});
+      else window.close();
+    });
+
+    winControls.append(minBtn, maxBtn, closeBtn);
+    titlebar.append(tbTitle, winControls);
 
     // ── Header ──
     const header = document.createElement('div');
@@ -87,7 +149,7 @@ export class BrowserView {
     });
 
     body.append(sidebarEl, handle, browserEl);
-    this.element.append(header, body);
+    this.element.append(titlebar, header, body);
   }
 
   public getElement(): HTMLElement { return this.element; }
